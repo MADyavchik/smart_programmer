@@ -49,6 +49,7 @@ class Ball:
         self.x = random.randint(self.radius, width - self.radius)
         self.y = random.randint(VISIBLE_TOP + self.radius, VISIBLE_BOTTOM - self.radius)
         self.dx = random.uniform(-3, 3)
+        self.dy = random.uniform(-3, 0)
         self.color = self.random_color()
         self.alpha = random.randint(100, 150)  # Прозрачность от 100 до 255
 
