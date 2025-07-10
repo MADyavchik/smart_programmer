@@ -1,3 +1,8 @@
+import threading
+import queue
+import sys
+import termios
+import tty
 import pygame
 from PIL import Image
 from luma.core.interface.serial import spi
@@ -14,9 +19,26 @@ surface = pygame.Surface((width, height))
 font = pygame.font.Font(None, 36)
 clock = pygame.time.Clock()
 
-# Меню
 menu_items = ["Прошить", "Проверка", "Настройки", "Выход"]
 selected = 0
+
+# Очередь для клавиш
+key_queue = queue.Queue()
+
+# Поток чтения клавиш из терминала SSH
+def read_keys(q):
+    fd = sys.stdin.fileno()
+    old_settings = termios.tcgetattr(fd)
+    try:
+        tty.setcbreak(fd)
+        while True:
+            ch = sys.stdin.read(1)
+            q.put(ch)
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+
+# Запуск потока
+threading.Thread(target=read_keys, args=(key_queue,), daemon=True).start()
 
 running = True
 while running:
@@ -33,18 +55,17 @@ while running:
     img = Image.frombytes("RGB", (width, height), raw_str)
     device.display(img)
 
-    # Обработка событий клавиатуры
-    for event in pygame.event.get():
-        if event.type == pygame.KEYDOWN:
-            if event.key in [pygame.K_UP, pygame.K_w]:
-                selected = (selected - 1) % len(menu_items)
-            elif event.key in [pygame.K_DOWN, pygame.K_s]:
-                selected = (selected + 1) % len(menu_items)
-            elif event.key == pygame.K_RETURN:
-                choice = menu_items[selected]
-                print(f"Выбран пункт: {choice}")
-                if choice == "Выход":
-                    running = False
-                # Здесь добавляй действия по выбору
+    # Обработка нажатий с SSH
+    while not key_queue.empty():
+        key = key_queue.get()
+        if key in ['w', 'A', '\x1b[A']:  # 'w' или стрелка вверх
+            selected = (selected - 1) % len(menu_items)
+        elif key in ['s', 'B', '\x1b[B']:  # 's' или стрелка вниз
+            selected = (selected + 1) % len(menu_items)
+        elif key == '\n':  # Enter
+            choice = menu_items[selected]
+            print(f"Выбран пункт: {choice}")
+            if choice == "Выход":
+                running = False
 
     clock.tick(10)
