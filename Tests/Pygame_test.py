@@ -23,7 +23,7 @@ ads = ADS.ADS1115(i2c)
 chan = AnalogIn(ads, ADS.P0)  # Канал A0
 
 # Дисплей
-serial = spi(port=0, device=0, gpio_DC=23, gpio_RST=24, bus_speed_hz=40000000)
+serial = spi(port=0, device=0, gpio_DC=25, gpio_RST=16, bus_speed_hz=40000000)
 device = st7789(serial, width=320, height=240, rotate=2)
 
 # Pygame
