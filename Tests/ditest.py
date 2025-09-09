@@ -8,7 +8,7 @@ from PIL import Image, ImageDraw
 GPIO.setmode(GPIO.BCM)
 BLC = 12   # подсветка
 GPIO.setup(BLC, GPIO.OUT)
-GPIO.output(BLC, 1)  # включаем подсветку
+GPIO.output(BLC, GPIO.HIGH)  # включаем подсветку
 
 # --- Настройка дисплея ---
 serial = spi(port=0, device=0, gpio_DC=25, gpio_RST=16, bus_speed_hz=16000000)
