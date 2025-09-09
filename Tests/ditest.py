@@ -24,5 +24,5 @@ for color in ["red", "green", "blue", "white", "black"]:
     fill(color)
     time.sleep(1)
 
-print("Тест завершён!")
+print("Тест завершёнен!")
 GPIO.cleanup()
