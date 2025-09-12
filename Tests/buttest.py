@@ -1,23 +1,16 @@
-import RPi.GPIO as GPIO
-import time
+from gpiozero import Button
+from signal import pause
 
-buttons = [5, 6, 13, 19, 26]
+buttons = {
+    5: Button(5, pull_up=True),
+    6: Button(6, pull_up=True),
+    13: Button(13, pull_up=True),
+    19: Button(19, pull_up=True),
+    26: Button(26, pull_up=True),
+}
 
-def button_callback(channel):
-    print(f"Нажата кнопка на GPIO{channel}")
+for pin, btn in buttons.items():
+    btn.when_pressed = lambda p=pin: print(f"Нажата кнопка на GPIO{p}")
 
-GPIO.setwarnings(False)
-GPIO.cleanup()          # сброс всех старых настроек!
-GPIO.setmode(GPIO.BCM)
-
-for pin in buttons:
-    GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-    GPIO.add_event_detect(pin, GPIO.FALLING, callback=button_callback, bouncetime=200)
-
-print("Ожидание кнопок... Нажми Ctrl+C для выхода.")
-try:
-    while True:
-        time.sleep(1)
-except KeyboardInterrupt:
-    GPIO.cleanup()
-    print("Выход")
+print("Жми кнопки... (Ctrl+C чтобы выйти)")
+pause()
