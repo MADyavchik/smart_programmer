@@ -12,10 +12,10 @@ import RPi.GPIO as GPIO
 # -------------------- GPIO --------------------
 buttons = {
     "up": 5,
-    "down": 6,
-    "left": 13,
-    "right": 19,
-    "reset": 26,
+    "down": 19,
+    "left": 6,
+    "right": 26,
+    "reset": 13,
 }
 
 GPIO.setmode(GPIO.BCM)
@@ -36,7 +36,7 @@ chan = AnalogIn(ads, ADS.P0)
 
 # -------------------- Дисплей --------------------
 serial = spi(port=0, device=0, gpio_DC=25, gpio_RST=16, bus_speed_hz=40000000)
-device = st7789(serial, width=320, height=240, rotate=2)
+device = st7789(serial, width=320, height=240, rotate=0)
 
 # -------------------- Pygame --------------------
 pygame.init()
