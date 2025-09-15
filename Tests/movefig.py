@@ -25,6 +25,11 @@ GPIO.setwarnings(False)
 GPIO.setup(12, GPIO.OUT)
 GPIO.output(12, GPIO.HIGH)
 
+# Статус подключения зарядки
+
+GPIO.setup(21, GPIO.IN)
+
+
 # Кнопки с подтяжкой
 for pin in buttons.values():
     GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
@@ -77,7 +82,11 @@ while True:
     # Измерение напряжения
     voltage = chan.voltage * 2
     text = f"Battery: {voltage:.2f} V"
-    text_surface = font.render(text, True, (255, 255, 255))
+    status = GPIO.input(21)
+    if status == True:
+        text_surface = font.render(text, True, (255, 255, 0))
+    else:
+        text_surface = font.render(text, True, (255, 255, 255))
     surface.blit(text_surface, (10, 45))
 
     # Отобразить на дисплее
