@@ -94,4 +94,4 @@ while True:
     img = Image.frombytes("RGB", (width, height), raw_str)
     device.display(img)
 
-    clock.tick(120)
+    clock.tick(20)
