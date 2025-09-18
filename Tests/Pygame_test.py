@@ -24,7 +24,7 @@ chan = AnalogIn(ads, ADS.P0)  # Канал A0
 
 # Дисплей
 serial = spi(port=0, device=0, gpio_DC=25, gpio_RST=16, bus_speed_hz=40000000)
-device = st7789(serial, width=320, height=240, rotate=2)
+device = st7789(serial, width=320, height=240, rotate=0)
 
 # Pygame
 pygame.init()
@@ -40,8 +40,6 @@ VISIBLE_BOTTOM = height - 5
 GRAVITY = 0.1
 DAMPING = 1.0
 
-import random
-import pygame
 
 class Ball:
     def __init__(self):
@@ -51,7 +49,7 @@ class Ball:
         self.dx = random.uniform(-3, 3)
         self.dy = random.uniform(-3, 0)
         self.color = self.random_color()
-        self.alpha = random.randint(100, 150)  # Прозрачность от 100 до 255
+        self.alpha = random.randint(100, 150)  # Прозрачность
 
     def random_color(self):
         return (
@@ -73,13 +71,13 @@ class Ball:
         # Стенка снизу
         if self.y + self.radius > VISIBLE_BOTTOM:
             self.y = VISIBLE_BOTTOM - self.radius
-            self.dy = -self.initial_bounce_speed()  # фиксированная скорость вверх
+            self.dy = -self.initial_bounce_speed()
             self.color = self.random_color()
 
         # Стенка сверху
         if self.y - self.radius < VISIBLE_TOP:
             self.y = VISIBLE_TOP + self.radius
-            self.dy = self.initial_bounce_speed()  # вниз
+            self.dy = self.initial_bounce_speed()
             self.color = self.random_color()
 
     def draw(self, surface):
@@ -90,10 +88,14 @@ class Ball:
         surface.blit(ball_surface, (int(self.x - self.radius), int(self.y - self.radius)))
 
     def initial_bounce_speed(self):
-        return random.uniform(3.0, 5.0)  # можно сделать постоянным, если не хочешь случайность
+        return random.uniform(3.0, 5.0)
+
 
 # Создание шаров
 balls = [Ball() for _ in range(30)]
+
+# Стартовое время для таймера
+start_time = time.time()
 
 while True:
     surface.fill((0, 0, 0))
@@ -103,11 +105,20 @@ while True:
         ball.move()
         ball.draw(surface)
 
-    # Измерение напряжения (умножаем на 2, если делитель)
+    # Измерение напряжения
     voltage = chan.voltage * 2
     text = f"Battery: {voltage:.2f} V"
     text_surface = font.render(text, True, (255, 255, 255))
     surface.blit(text_surface, (10, 45))
+
+    # Таймер (чч:мм:сс)
+    elapsed_time = int(time.time() - start_time)
+    hours = elapsed_time // 3600
+    minutes = (elapsed_time % 3600) // 60
+    seconds = elapsed_time % 60
+    timer_text = f"{hours:02}:{minutes:02}:{seconds:02}"
+    timer_surface = font.render(timer_text, True, (255, 255, 255))
+    surface.blit(timer_surface, (200, 45))
 
     # Отобразить на дисплее
     raw_str = pygame.image.tostring(surface, "RGB")
@@ -115,4 +126,3 @@ while True:
     device.display(img)
 
     clock.tick(120)
-
