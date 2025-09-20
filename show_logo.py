@@ -8,7 +8,7 @@ import subprocess
 # Включаем подсветку на GPIO12
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(12, GPIO.OUT)
-GPIO.output(12, GPIO.HIGH)  # включить подсветку
+GPIO.output(12, GPIO.LOW)  # включить подсветку
 
 # Инициализация дисплея
 serial = spi(port=0, device=0, gpio_DC=25, gpio_RST=16, bus_speed_hz=40000000)
@@ -33,6 +33,9 @@ background.paste(logo_resized, (x, y))
 
 # Отображаем
 device.display(background)
+time.sleep(1)
+GPIO.output(12, GPIO.HIGH)
+
 # Подождём пару секунд
 time.sleep(3)
 
