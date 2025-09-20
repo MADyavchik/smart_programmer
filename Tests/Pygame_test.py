@@ -1,4 +1,4 @@
-iimport pygame
+import pygame
 from PIL import Image
 from luma.core.interface.serial import spi
 from luma.lcd.device import st7789
