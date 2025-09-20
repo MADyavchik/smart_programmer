@@ -37,7 +37,7 @@ device.display(background)
 GPIO.output(12, GPIO.HIGH)
 
 # Подождём пару секунд
-time.sleep(3)
+time.sleep(1)
 
 # Запускаем основную программу
 subprocess.run(["python3", "/root/smart_programmer/Tests/Pygame_test.py"])
