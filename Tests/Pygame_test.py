@@ -1,4 +1,4 @@
-import pygame
+iimport pygame
 from PIL import Image
 from luma.core.interface.serial import spi
 from luma.lcd.device import st7789
@@ -91,6 +91,16 @@ class Ball:
         return random.uniform(3.0, 5.0)
 
 
+# Функция для температуры CPU
+def get_cpu_temp():
+    try:
+        with open("/sys/class/thermal/thermal_zone0/temp", "r") as f:
+            temp_str = f.readline()
+        return float(temp_str) / 1000.0  # °C
+    except FileNotFoundError:
+        return 0.0
+
+
 # Создание шаров
 balls = [Ball() for _ in range(30)]
 
@@ -118,7 +128,15 @@ while True:
     seconds = elapsed_time % 60
     timer_text = f"{hours:02}:{minutes:02}:{seconds:02}"
     timer_surface = font.render(timer_text, True, (255, 255, 255))
-    surface.blit(timer_surface, (200, 45))
+    # Выравнивание по правому краю
+    timer_x = width - timer_surface.get_width() - 10
+    surface.blit(timer_surface, (timer_x, 45))
+
+    # Температура CPU
+    cpu_temp = get_cpu_temp()
+    cpu_text = f"CPU: {cpu_temp:.1f} °C"
+    cpu_surface = font.render(cpu_text, True, (255, 255, 255))
+    surface.blit(cpu_surface, (10, 70))
 
     # Отобразить на дисплее
     raw_str = pygame.image.tostring(surface, "RGB")
