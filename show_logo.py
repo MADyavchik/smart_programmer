@@ -21,4 +21,4 @@ device.display(logo)
 time.sleep(3)
 
 # Запускаем основную программу
-subprocess.run(["python3", "/root/smart_programmer/Tesys/Pygame_test.py"])
+subprocess.run(["python3", "/root/smart_programmer/Tests/Pygame_test.py"])
