@@ -33,7 +33,7 @@ background.paste(logo_resized, (x, y))
 
 # Отображаем
 device.display(background)
-time.sleep(1)
+time.sleep(0.1)
 GPIO.output(12, GPIO.HIGH)
 
 # Подождём пару секунд
