@@ -4,6 +4,7 @@ import pygame
 from PIL import Image
 from luma.core.interface.serial import spi
 from luma.lcd.device import st7789
+from battery_status import get_battery_status  # импортируем функцию
 
 # GPIO-кнопки
 buttons = {
@@ -125,6 +126,47 @@ try:
         device.display(img)
 
         clock.tick(10)
+
+STATE_MAIN = "main"
+STATE_INFO = "info"
+state = STATE_MAIN
+
+running = True
+try:
+    while running:
+        surface.fill((255, 255, 255))
+
+        if state == STATE_MAIN:
+            # тут твой код отрисовки иконок ...
+            # при выборе info:
+            if GPIO.input(buttons["reset"]) == GPIO.LOW:
+                choice = icons[selected][0]
+                if choice == "info":
+                    state = STATE_INFO
+                    time.sleep(0.2)
+
+        elif state == STATE_INFO:
+            # экран информации о батарее
+            voltage, charging = get_battery_status()
+            text1 = f"Battery: {voltage:.2f} V"
+            text2 = "Charging: Yes" if charging else "Charging: No"
+
+            txt1 = font.render(text1, True, (0, 0, 0))
+            txt2 = font.render(text2, True, (0, 0, 0))
+            surface.blit(txt1, (50, 80))
+            surface.blit(txt2, (50, 120))
+
+            # кнопка назад
+            if GPIO.input(buttons["left"]) == GPIO.LOW:
+                state = STATE_MAIN
+                time.sleep(0.2)
+
+        # Отобразить на дисплее
+        raw_str = pygame.image.tostring(surface, "RGB")
+        img = Image.frombytes("RGB", (width, height), raw_str)
+        device.display(img)
+
+        clock.tick(20)
 
 finally:
     GPIO.cleanup()
