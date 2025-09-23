@@ -1,4 +1,5 @@
 import os
+import time
 import RPi.GPIO as GPIO
 import pygame
 from PIL import Image
@@ -53,6 +54,7 @@ positions = [
 # Состояния
 STATE_MAIN = "main"
 STATE_BURN = "burn_menu"
+STATE_INFO = "info"
 state = STATE_MAIN
 
 selected = 0
@@ -63,8 +65,8 @@ try:
     while running:
         surface.fill((255, 255, 255))  # белый фон
 
+        # --- Главное меню ---
         if state == STATE_MAIN:
-            # Главное меню (иконки)
             for i, (name, icon) in enumerate(icons):
                 x, y = positions[i]
                 surface.blit(icon, (x, y))
@@ -88,65 +90,39 @@ try:
                 choice = icons[selected][0]
                 print(f"Выбрана иконка: {choice}")
                 if choice == "burn":
-                    # Переход в подменю
                     state = STATE_BURN
                     selected = 0
-                    # Загружаем список папок из "Прошивки"
                     base_path = "/root/smart_programmer/Прошивки"
                     folders = [f for f in os.listdir(base_path) if os.path.isdir(os.path.join(base_path, f))]
                     folders.sort()
+                    time.sleep(0.2)
                 elif choice == "info":
-                    running = False
+                    state = STATE_INFO
+                    time.sleep(0.2)
 
+        # --- Подменю Burn ---
         elif state == STATE_BURN:
-            # Подменю (список папок)
             y_start = 50
             for i, folder in enumerate(folders):
                 color = (255, 0, 0) if i == selected else (0, 0, 0)
                 text_surface = font.render(folder, True, color)
                 surface.blit(text_surface, (40, y_start + i * 40))
 
-            # Обработка кнопок
             if GPIO.input(buttons["up"]) == GPIO.LOW and folders:
                 selected = (selected - 1) % len(folders)
             elif GPIO.input(buttons["down"]) == GPIO.LOW and folders:
                 selected = (selected + 1) % len(folders)
             elif GPIO.input(buttons["left"]) == GPIO.LOW:
-                # Назад в главное меню
                 state = STATE_MAIN
                 selected = 0
+                time.sleep(0.2)
             elif GPIO.input(buttons["reset"]) == GPIO.LOW and folders:
                 choice = folders[selected]
                 print(f"Выбрана папка прошивки: {choice}")
-                # Здесь можно запускать логику прошивки
+                time.sleep(0.2)
 
-        # Вывод на дисплей
-        raw_str = pygame.image.tostring(surface, "RGB")
-        img = Image.frombytes("RGB", (width, height), raw_str)
-        device.display(img)
-
-        clock.tick(10)
-
-STATE_MAIN = "main"
-STATE_INFO = "info"
-state = STATE_MAIN
-
-running = True
-try:
-    while running:
-        surface.fill((255, 255, 255))
-
-        if state == STATE_MAIN:
-            # тут твой код отрисовки иконок ...
-            # при выборе info:
-            if GPIO.input(buttons["reset"]) == GPIO.LOW:
-                choice = icons[selected][0]
-                if choice == "info":
-                    state = STATE_INFO
-                    time.sleep(0.2)
-
+        # --- Экран Info ---
         elif state == STATE_INFO:
-            # экран информации о батарее
             voltage, charging = get_battery_status()
             text1 = f"Battery: {voltage:.2f} V"
             text2 = "Charging: Yes" if charging else "Charging: No"
@@ -156,17 +132,17 @@ try:
             surface.blit(txt1, (50, 80))
             surface.blit(txt2, (50, 120))
 
-            # кнопка назад
             if GPIO.input(buttons["left"]) == GPIO.LOW:
                 state = STATE_MAIN
+                selected = 0
                 time.sleep(0.2)
 
-        # Отобразить на дисплее
+        # Вывод на дисплей
         raw_str = pygame.image.tostring(surface, "RGB")
         img = Image.frombytes("RGB", (width, height), raw_str)
         device.display(img)
 
-        clock.tick(20)
+        clock.tick(10)
 
 finally:
     GPIO.cleanup()
