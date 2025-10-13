@@ -32,10 +32,10 @@ clock = pygame.time.Clock()
 font = pygame.font.Font(None, 32)
 
 # Text wrap
-def wrap_text(text, font, max_width, max_lines=3):
+def wrap_text(text, font, max_width, max_lines=2):
     """
-    Делит строку на максимум max_lines,
-    перенос по словам для Pygame.
+    Делит текст на максимум max_lines, перенос по словам.
+    Если текста больше, чем помещается, оставшаяся часть идёт в последнюю строку.
     """
     words = text.split(' ')
     lines = []
@@ -49,11 +49,14 @@ def wrap_text(text, font, max_width, max_lines=3):
             lines.append(current)
             current = word
             if len(lines) == max_lines - 1:
-                break
+                break  # оставляем остаток для последней строки
 
-    lines.append(current)
+    # Остаток слов — в последнюю строку
+    remaining_words = words[words.index(word):] if len(lines) == max_lines - 1 else []
+    last_line = current + " " + " ".join(remaining_words)
+    last_line = last_line.strip()
+    lines.append(last_line)
 
-    # Если текста всё равно больше — обрезаем остаток
     return lines[:max_lines]
 
 # Загружаем иконки
