@@ -1,65 +1,102 @@
 # log_reader.py
-import serial
 import re
 
-# Регулярка для ANSI escape-последовательностей
+
+# Регулярка для удаления ANSI-последовательностей
 ansi_escape = re.compile(r'\x1B\[[0-?]*[ -/]*[@-~]')
 
 
-log_lines = []  # буфер логов
-#scroll_index = 0
-MAX_LOG_HEIGHT = 170  # видимая область для текста
+class LogManager:
+    def __init__(self, font, max_width, max_height, line_spacing=4, alert_markers=None):
+        self.font = font
+        self.max_width = max_width
+        self.max_height = max_height
+        self.line_spacing = line_spacing
+        self.alert_markers = alert_markers or ["ReportBuilder:"]
 
-def read_logs(port="/dev/ttyS0", baud=115200):
+        self.log_lines = []      # [(строка, indent_flag)]
+        self.scroll_index = 0
+        self.auto_scroll = True
+        self.generator = None
 
-    try:
-        with serial.Serial(port, baud, timeout=0.1) as ser:
-            while True:
-                line = ser.readline().decode(errors="ignore").strip()
-                if line:
-                    yield line
-    except Exception as e:
-        yield f"Ошибка: {e}"
+    # --- Запуск UART чтения ---
+    def start(self, port="/dev/ttyS0", baud=115200):
+        self.generator = self._read_logs(port, baud)
 
-def clean_line(line):
-    """
-    Убирает все ANSI коды и неотображаемые символы из строки
-    """
-    # Убираем ANSI коды
-    line = ansi_escape.sub('', line)
-    # Убираем все неотображаемые символы (\x00, спецсимволы)
-    line = "".join(ch for ch in line if 32 <= ord(ch) <= 126)
-    return line
+    def _read_logs(self, port, baud):
+        try:
+            import serial
+            with serial.Serial(port, baud, timeout=0.1) as ser:
+                while True:
+                    line = ser.readline().decode(errors="ignore").strip()
+                    if line:
+                        yield line
+        except Exception as e:
+            yield f"Ошибка: {e}"
 
-def wrap_text_to_screen(text, font, max_width, line_spacing=4, indent=20):
-    """
-    Делит текст на строки для экрана.
-    Только переносимые части получают отступ.
-    Возвращает список кортежей: (строка, indent_flag)
-    """
-    words = text.split(' ')
-    lines = []
-    current = ""
-    first_line = True
+    # --- Чистка от ANSI и мусора ---
+    def _clean_line(self, line):
+        line = ansi_escape.sub('', line)
+        line = "".join(ch for ch in line if 32 <= ord(ch) <= 126)
+        return line
 
-    for word in words:
-        test_line = (current + " " + word).strip()
-        test_width = font.size(test_line)[0]
-        if test_width <= max_width:
-            current = test_line
-        else:
-            lines.append((current, not first_line))  # True = нужно сдвигать
-            current = word
-            first_line = False
+    # --- Перенос строки на экран ---
+    def _wrap_text(self, text):
+        words = text.split(' ')
+        lines = []
+        current = ""
+        first_line = True
 
-    if current:
-        lines.append((current, not first_line))
+        for word in words:
+            test_line = (current + " " + word).strip()
+            test_width = self.font.size(test_line)[0]
+            if test_width <= self.max_width:
+                current = test_line
+            else:
+                lines.append((current, not first_line))
+                current = word
+                first_line = False
 
-    return lines
+        if current:
+            lines.append((current, not first_line))
 
-# Add line
-def add_log_line(line, font, max_width, max_height, line_spacing=4, indent=20):
-    global log_lines
-    wrapped = wrap_text_to_screen(line, font, max_width, line_spacing, indent)
-    log_lines.extend(wrapped)
-    return log_lines  # НЕ обрезаем!
+        return lines
+
+    # --- Добавление строки в буфер ---
+    def add_line(self, line):
+        clean = self._clean_line(line)
+        wrapped = self._wrap_text(clean)
+        self.log_lines.extend(wrapped)
+
+    # --- Получение визуальных строк (учёт скролла) ---
+    def get_visible(self):
+        line_height = self.font.get_linesize() + self.line_spacing
+        max_visible_lines = self.max_height // line_height
+
+        if self.auto_scroll:
+            self.scroll_index = max(0, len(self.log_lines) - max_visible_lines)
+
+        start = self.scroll_index
+        end = start + max_visible_lines
+        return self.log_lines[start:end], line_height
+
+    # --- Скролл вверх ---
+    def scroll_up(self):
+        self.auto_scroll = False
+        self.scroll_index = max(0, self.scroll_index - 1)
+
+    # --- Скролл вниз ---
+    def scroll_down(self):
+        self.auto_scroll = False
+        line_height = self.font.get_linesize() + self.line_spacing
+        max_visible_lines = self.max_height // line_height
+        max_scroll = max(0, len(self.log_lines) - max_visible_lines)
+        self.scroll_index = min(max_scroll, self.scroll_index + 1)
+
+    # --- Перейти в конец (включить автопрокрутку) ---
+    def scroll_to_end(self):
+        self.auto_scroll = True
+
+    # --- Проверка на «красные» строки ---
+    def is_alert_line(self, text):
+        return any(marker in text for marker in self.alert_markers)

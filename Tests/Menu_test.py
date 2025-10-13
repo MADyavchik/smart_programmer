@@ -7,7 +7,8 @@ from PIL import Image
 from luma.core.interface.serial import spi
 from luma.lcd.device import st7789
 from battery_status import get_battery_status  # импортируем функцию
-from log_reader import read_logs, add_log_line, clean_line
+from log_reader import LogManager
+log_manager = LogManager(font, max_width=300, max_height=170, line_spacing=4)
 
 
 scroll_index = 0
@@ -113,8 +114,7 @@ try:
                 elif choice == "download":
                     state = STATE_LOGS
                     # создаём генератор логов из UART
-                    log_generator = read_logs(port="/dev/ttyS0", baud=115200)
-                    current_log_line = ""
+                    log_manager.start(port="/dev/ttyS0", baud=115200)
                     time.sleep(0.2)
 
         # --- Подменю Burn ---
@@ -156,70 +156,44 @@ try:
 
        # --- Экран логов ---
         elif state == STATE_LOGS:
-            surface.fill((255, 255, 255))  # белый фон
+            surface.fill((255, 255, 255))
 
             try:
-                line = next(log_generator)
-                clean = clean_line(line)
-                print(line)
-
-                visible_lines = add_log_line(clean, font, max_width=300, max_height=170, line_spacing=4)
-
+                line = next(log_manager.generator)
+                log_manager.add_line(line)
             except StopIteration:
-                visible_lines = add_log_line("Лог завершён.", font, max_width=300, max_height=170, line_spacing=4)
+                pass
 
-            # ---- ПАРАМЕТРЫ ОТОБРАЖЕНИЯ ----
-            line_height = font.get_linesize() + 4
-            MAX_VISIBLE_LINES = 170 // line_height
+            visible_lines, line_height = log_manager.get_visible()
 
-            # ✅ АВТОПРОКРУТКА, если включена
-            if auto_scroll:
-                scroll_index = max(0, len(visible_lines) - MAX_VISIBLE_LINES)
-
-            # ---- ОБРАБОТКА КНОПОК ----
             if GPIO.input(buttons["up"]) == GPIO.LOW:
-                auto_scroll = False  # отключаем авто
-                scroll_index = max(0, scroll_index - 1)
+                log_manager.scroll_up()
                 time.sleep(0.05)
 
             if GPIO.input(buttons["down"]) == GPIO.LOW:
-                auto_scroll = False  # отключаем авто
-                max_scroll = max(0, len(visible_lines) - MAX_VISIBLE_LINES)
-                scroll_index = min(max_scroll, scroll_index + 1)
+                log_manager.scroll_down()
                 time.sleep(0.05)
 
             if GPIO.input(buttons["right"]) == GPIO.LOW:
-                # включаем автопрокрутку и прыгаем в конец
-                auto_scroll = True
-                scroll_index = max(0, len(visible_lines) - MAX_VISIBLE_LINES)
+                log_manager.scroll_to_end()
                 time.sleep(0.05)
 
-            # ---- ОТРИСОВКА ----
             y_start = 35
-            start = scroll_index
-            end = scroll_index + MAX_VISIBLE_LINES
-
-            for i, (line_text, is_indent) in enumerate(visible_lines[start:end]):
+            for i, (line_text, is_indent) in enumerate(visible_lines):
                 x_offset = 10 + (20 if is_indent else 0)
-                # Если в строке есть "ReportBuilder:", красим в красный
-                if "ReportBuilder:" in line_text:
-                    color = COLOR_ALERT
-                else:
-                    color = COLOR_NORMAL
-
+                color = (255, 0, 0) if log_manager.is_alert_line(line_text) else (0, 0, 0)
                 txt = font.render(line_text, True, color)
                 surface.blit(txt, (x_offset, y_start + i * line_height))
 
-            # ---- ВЫХОД ----
             if GPIO.input(buttons["left"]) == GPIO.LOW:
                 state = STATE_MAIN
                 selected = 0
                 time.sleep(0.2)
 
-        # Вывод на дисплей
-        raw_str = pygame.image.tostring(surface, "RGB")
-        img = Image.frombytes("RGB", (width, height), raw_str)
-        device.display(img)
+                # Вывод на дисплей
+                raw_str = pygame.image.tostring(surface, "RGB")
+                img = Image.frombytes("RGB", (width, height), raw_str)
+                device.display(img)
 
         clock.tick(10)
 
