@@ -167,11 +167,10 @@ try:
                 visible_lines = add_log_line("Лог завершён.", font, max_width=300, max_height=170, line_spacing=4)
 
             # рисуем все видимые строки
-            y_start = 35  # отступ сверху
-            for i, line in enumerate(visible_lines):
-                # добавляем сдвиг для переноса
-                x_offset = 10 if i == 0 else 10 + 20  # первая строка без indent, остальные со сдвигом
-                txt = font.render(line, True, (0,0,0))
+            y_start = 35
+            for i, (line_text, is_indent) in enumerate(visible_lines):
+                x_offset = 10 + (20 if is_indent else 0)
+                txt = font.render(line_text, True, (0, 0, 0))
                 surface.blit(txt, (x_offset, y_start + i * (font.get_linesize() + 4)))
 
 

@@ -29,55 +29,41 @@ def clean_line(line):
     line = "".join(ch for ch in line if 32 <= ord(ch) <= 126)
     return line
 
-def wrap_text_to_screen(text, font, max_width, max_height, line_spacing=4, indent=20):
+def wrap_text_to_screen(text, font, max_width, line_spacing=4, indent=20):
     """
-    Делит текст на строки для экрана, добавляя отступ для переноса.
-    indent: пиксели для сдвига всех строк кроме первой.
+    Делит текст на строки для экрана.
+    Только переносимые части получают отступ.
+    Возвращает список кортежей: (строка, indent_flag)
     """
     words = text.split(' ')
     lines = []
     current = ""
-    line_height = font.get_linesize()
-
-    first_line = True  # флаг первой строки
+    first_line = True
 
     for word in words:
         test_line = (current + " " + word).strip()
-        # для вычисления ширины применяем отступ только к переносимым строкам
-        test_width = font.size(test_line)[0] + (0 if first_line else indent)
+        test_width = font.size(test_line)[0]
         if test_width <= max_width:
             current = test_line
         else:
-            # добавляем текущую строку в список
-            lines.append(current)
+            lines.append((current, not first_line))  # True = нужно сдвигать
             current = word
-            first_line = False  # последующие строки будут с отступом
+            first_line = False
 
     if current:
-        lines.append(current)
+        lines.append((current, not first_line))
 
-    # ограничиваем по высоте экрана
-    max_lines = max_height // (line_height + line_spacing)
-    return lines[:max_lines]
+    return lines
 
 # Add line
-def add_log_line(line, font, max_width, max_height, line_spacing=4):
-    """
-    Добавляет строку в буфер с автоматическим переносом.
-    Возвращает список всех видимых строк на экране.
-    """
+def add_log_line(line, font, max_width, max_height, line_spacing=4, indent=20):
     global log_lines
-
-    # перенос длинной строки
-    wrapped = wrap_text_to_screen(line, font, max_width, max_height, line_spacing)
-
+    wrapped = wrap_text_to_screen(line, font, max_width, line_spacing, indent)
     log_lines.extend(wrapped)
 
-    # вычисляем высоту всех строк
+    # ограничиваем по высоте
     line_height = font.get_linesize() + line_spacing
     max_lines = max_height // line_height
-
-    # если строк больше чем помещается — обрезаем сверху
     if len(log_lines) > max_lines:
         log_lines = log_lines[-max_lines:]
 
