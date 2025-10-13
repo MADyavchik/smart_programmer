@@ -104,7 +104,8 @@ try:
 
                 elif choice == "download":
                     state = STATE_LOGS
-                    log_generator = read_logs()  # запуск чтения
+                    # создаём генератор логов из UART
+                    log_generator = read_logs(port="/dev/ttyS0", baud=115200)
                     current_log_line = ""
                     time.sleep(0.2)
 
@@ -146,16 +147,25 @@ try:
                 time.sleep(0.2)
 
         # ---Экран log---
+
         elif state == STATE_LOGS:
             surface.fill((255, 255, 255))  # белый фон
+
             try:
+                # читаем следующую строку из генератора логов
                 line = next(log_generator)
                 current_log_line = line
+
+                # выводим в консоль для отладки
+                print(line)
+
             except StopIteration:
                 current_log_line = "Лог завершён."
 
-            txt = font.render(current_log_line, True, (0,0,0))
+            # отрисовка на дисплее
+            txt = font.render(current_log_line, True, (0, 0, 0))
             surface.blit(txt, (10, 100))
+
 
             # выйти назад по кнопке
             if GPIO.input(buttons["left"]) == GPIO.LOW:

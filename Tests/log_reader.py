@@ -1,21 +1,15 @@
-import subprocess
+import serial
 
-def read_logs(command=["platformio", "device", "monitor"]):
+def read_logs(port="/dev/ttyS0", baud=115200):
     """
-    Запускает монитор платформы и построчно читает вывод.
-    Возвращает генератор строк.
+    Читает построчно UART и возвращает генератор строк.
+    Аналог monitor PlatformIO, но без PIO.
     """
     try:
-        process = subprocess.Popen(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            bufsize=1
-        )
-
-        for line in process.stdout:
-            yield line.rstrip()
-
+        with serial.Serial(port, baud, timeout=0.1) as ser:
+            while True:
+                line = ser.readline().decode(errors="ignore").strip()
+                if line:
+                    yield line
     except Exception as e:
         yield f"Ошибка: {e}"
