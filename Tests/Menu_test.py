@@ -146,6 +146,8 @@ try:
         elif state == STATE_LOGS:
             try:
                 line = next(log_manager.generator)
+                if line is not None:
+                    log_manager.add_line(line)
                 log_manager.add_line(line)
             except StopIteration:
                 pass

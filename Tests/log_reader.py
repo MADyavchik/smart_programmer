@@ -26,11 +26,14 @@ class LogManager:
     def _read_logs(self, port, baud):
         try:
             import serial
-            with serial.Serial(port, baud, timeout=0.1) as ser:
+            with serial.Serial(port, baud, timeout=0.1) as ser:  # короткий таймаут
                 while True:
-                    line = ser.readline().decode(errors="ignore").strip()
-                    if line:
-                        yield line
+                    if ser.in_waiting:  # проверяем, есть ли данные
+                        line = ser.readline().decode(errors="ignore").strip()
+                        if line:
+                            yield line
+                    else:
+                        yield None  # генератор не блокирует цикл
         except Exception as e:
             yield f"Ошибка: {e}"
 
