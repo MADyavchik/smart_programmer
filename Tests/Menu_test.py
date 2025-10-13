@@ -11,6 +11,7 @@ from log_reader import read_logs, add_log_line, clean_line
 
 
 scroll_index = 0
+auto_scroll = True
 
 
 # GPIO-кнопки
@@ -159,32 +160,40 @@ try:
             try:
                 line = next(log_generator)
                 clean = clean_line(line)
-                print(line)  # отладка
+                print(line)
 
                 visible_lines = add_log_line(clean, font, max_width=300, max_height=170, line_spacing=4)
 
             except StopIteration:
                 visible_lines = add_log_line("Лог завершён.", font, max_width=300, max_height=170, line_spacing=4)
 
-            # ✅ АВТОПРОКРУТКА НИЖЕ
+            # ---- ПАРАМЕТРЫ ОТОБРАЖЕНИЯ ----
             line_height = font.get_linesize() + 4
             MAX_VISIBLE_LINES = 170 // line_height
-            scroll_index = max(0, len(visible_lines) - MAX_VISIBLE_LINES)
 
-            # ---- ПРОКРУТКА КНОПКАМИ ----
-            line_height = font.get_linesize() + 4
-            MAX_VISIBLE_LINES = 170 // line_height  # помещается на экране
+            # ✅ АВТОПРОКРУТКА, если включена
+            if auto_scroll:
+                scroll_index = max(0, len(visible_lines) - MAX_VISIBLE_LINES)
 
+            # ---- ОБРАБОТКА КНОПОК ----
             if GPIO.input(buttons["up"]) == GPIO.LOW:
+                auto_scroll = False  # отключаем авто
                 scroll_index = max(0, scroll_index - 1)
                 time.sleep(0.15)
 
             if GPIO.input(buttons["down"]) == GPIO.LOW:
+                auto_scroll = False  # отключаем авто
                 max_scroll = max(0, len(visible_lines) - MAX_VISIBLE_LINES)
                 scroll_index = min(max_scroll, scroll_index + 1)
                 time.sleep(0.15)
 
-            # ---- ОТРИСОВКА окна ----
+            if GPIO.input(buttons["right"]) == GPIO.LOW:
+                # включаем автопрокрутку и прыгаем в конец
+                auto_scroll = True
+                scroll_index = max(0, len(visible_lines) - MAX_VISIBLE_LINES)
+                time.sleep(0.15)
+
+            # ---- ОТРИСОВКА ----
             y_start = 35
             start = scroll_index
             end = scroll_index + MAX_VISIBLE_LINES
