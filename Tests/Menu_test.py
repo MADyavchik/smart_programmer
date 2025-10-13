@@ -31,9 +31,20 @@ surface = pygame.Surface((width, height))
 clock = pygame.time.Clock()
 font = pygame.font.Font(None, 20)
 
+import re
+
+# Регулярка для ANSI escape-последовательностей
+ansi_escape = re.compile(r'\x1B\[[0-?]*[ -/]*[@-~]')
+
 def clean_line(line):
-    # Убираем все неотображаемые символы кроме пробелов
-    return "".join(ch for ch in line if 32 <= ord(ch) <= 126)
+    """
+    Убирает все ANSI коды и неотображаемые символы из строки
+    """
+    # Убираем ANSI коды
+    line = ansi_escape.sub('', line)
+    # Убираем все неотображаемые символы (\x00, спецсимволы)
+    line = "".join(ch for ch in line if 32 <= ord(ch) <= 126)
+    return line
 
 # Text wrap
 def wrap_text_to_screen(text, font, max_width, max_height, line_spacing=4):
