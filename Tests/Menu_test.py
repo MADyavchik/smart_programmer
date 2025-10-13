@@ -8,7 +8,7 @@ from luma.core.interface.serial import spi
 from luma.lcd.device import st7789
 from battery_status import get_battery_status  # импортируем функцию
 from log_reader import LogManager
-log_manager = LogManager(font, max_width=300, max_height=170, line_spacing=4)
+
 
 
 scroll_index = 0
@@ -38,6 +38,8 @@ width, height = 320, 240
 surface = pygame.Surface((width, height))
 clock = pygame.time.Clock()
 font = pygame.font.Font(None, 20)
+
+log_manager = LogManager(font, max_width=300, max_height=170, line_spacing=4)
 
 
 # Загружаем иконки
