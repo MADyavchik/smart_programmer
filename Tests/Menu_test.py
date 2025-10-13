@@ -32,14 +32,19 @@ clock = pygame.time.Clock()
 font = pygame.font.Font(None, 20)
 
 # Text wrap
-def wrap_text(text, font, max_width, max_lines=3):
+def wrap_text_to_screen(text, font, max_width, max_height, line_spacing=4):
     """
-    Делит текст на максимум max_lines, перенос по словам.
-    Если текста больше, чем помещается, оставшаяся часть идёт в последнюю строку.
+    Делит текст на строки, чтобы полностью помещался на экране.
+    text       : исходная строка
+    font       : pygame.font.Font
+    max_width  : ширина экрана в пикселях
+    max_height : высота экрана в пикселях
+    line_spacing: расстояние между строками
     """
     words = text.split(' ')
     lines = []
     current = ""
+    line_height = font.get_linesize()
 
     for word in words:
         test_line = (current + " " + word).strip()
@@ -48,8 +53,13 @@ def wrap_text(text, font, max_width, max_lines=3):
         else:
             lines.append(current)
             current = word
-            if len(lines) == max_lines - 1:
-                break  # оставляем остаток для последней строки
+
+    if current:
+        lines.append(current)
+
+    # Обрезаем строки, если превышают высоту экрана
+    max_lines = max_height // (line_height + line_spacing)
+    return lines[:max_lines]
 
     # Остаток слов — в последнюю строку
     remaining_words = words[words.index(word):] if len(lines) == max_lines - 1 else []
@@ -196,12 +206,18 @@ try:
             safe_line = current_log_line.replace("\x00", "")
 
             # автоматический перенос
-            lines = wrap_text(safe_line, font, max_width=300, max_lines=2)
+            lines = wrap_text_to_screen(
+                safe_line,
+                font,
+                max_width=300,    # оставляем отступы слева и справа
+                max_height=240,   # высота экрана
+                line_spacing=4
+            )
 
-            y_start = 80
+            y_start = 10
             for i, line in enumerate(lines):
                 txt = font.render(line, True, (0, 0, 0))
-                surface.blit(txt, (10, y_start + i * 35))
+                surface.blit(txt, (10, y_start + i * (font.get_linesize() + 4)))
 
 
             # выйти назад по кнопке
