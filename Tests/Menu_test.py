@@ -29,7 +29,7 @@ pygame.init()
 width, height = 320, 240
 surface = pygame.Surface((width, height))
 clock = pygame.time.Clock()
-font = pygame.font.Font(None, 32)
+font = pygame.font.Font(None, 20)
 
 # Text wrap
 def wrap_text(text, font, max_width, max_lines=2):
