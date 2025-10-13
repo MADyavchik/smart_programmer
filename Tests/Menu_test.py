@@ -151,7 +151,7 @@ try:
                 pass
 
             visible_lines, line_height = log_manager.get_visible()
-            MAX_VISIBLE_LINES = log_manager.max_lines
+
 
             # --- Кнопки прокрутки ---
             if GPIO.input(buttons["up"]) == GPIO.LOW:
