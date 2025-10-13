@@ -214,7 +214,7 @@ try:
                 line_spacing=4
             )
 
-            y_start = 10
+            y_start = 80
             for i, line in enumerate(lines):
                 txt = font.render(line, True, (0, 0, 0))
                 surface.blit(txt, (10, y_start + i * (font.get_linesize() + 4)))
