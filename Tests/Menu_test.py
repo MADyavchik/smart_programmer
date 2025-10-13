@@ -31,6 +31,31 @@ surface = pygame.Surface((width, height))
 clock = pygame.time.Clock()
 font = pygame.font.Font(None, 32)
 
+# Text wrap
+def wrap_text(text, font, max_width, max_lines=2):
+    """
+    Делит строку на максимум max_lines,
+    перенос по словам для Pygame.
+    """
+    words = text.split(' ')
+    lines = []
+    current = ""
+
+    for word in words:
+        test_line = (current + " " + word).strip()
+        if font.size(test_line)[0] <= max_width:
+            current = test_line
+        else:
+            lines.append(current)
+            current = word
+            if len(lines) == max_lines - 1:
+                break
+
+    lines.append(current)
+
+    # Если текста всё равно больше — обрезаем остаток
+    return lines[:max_lines]
+
 # Загружаем иконки
 icon_files = [
     ("burn", "icons/burn.png"),
@@ -164,9 +189,16 @@ try:
 
             # отрисовка на дисплее
             # Удаляем нулевые и другие неотображаемые символы
-            safe_line = "".join(ch for ch in current_log_line if ord(ch) >= 32 or ch in ("\n", "\r"))
-            txt = font.render(safe_line, True, (0, 0, 0))
-            surface.blit(txt, (10, 100))
+            # чистим строку от \x00
+            safe_line = current_log_line.replace("\x00", "")
+
+            # автоматический перенос
+            lines = wrap_text(safe_line, font, max_width=300, max_lines=2)
+
+            y_start = 80
+            for i, line in enumerate(lines):
+                txt = font.render(line, True, (0, 0, 0))
+                surface.blit(txt, (10, y_start + i * 35))
 
 
             # выйти назад по кнопке
