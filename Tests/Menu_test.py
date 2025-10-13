@@ -166,6 +166,11 @@ try:
             except StopIteration:
                 visible_lines = add_log_line("Лог завершён.", font, max_width=300, max_height=170, line_spacing=4)
 
+            # ✅ АВТОПРОКРУТКА НИЖЕ
+            line_height = font.get_linesize() + 4
+            MAX_VISIBLE_LINES = 170 // line_height
+            scroll_index = max(0, len(visible_lines) - MAX_VISIBLE_LINES)
+
             # ---- ПРОКРУТКА КНОПКАМИ ----
             line_height = font.get_linesize() + 4
             MAX_VISIBLE_LINES = 170 // line_height  # помещается на экране
