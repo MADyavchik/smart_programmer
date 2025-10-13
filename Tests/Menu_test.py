@@ -31,6 +31,10 @@ surface = pygame.Surface((width, height))
 clock = pygame.time.Clock()
 font = pygame.font.Font(None, 20)
 
+def clean_line(line):
+    # Убираем все неотображаемые символы кроме пробелов
+    return "".join(ch for ch in line if 32 <= ord(ch) <= 126)
+
 # Text wrap
 def wrap_text_to_screen(text, font, max_width, max_height, line_spacing=4):
     """
@@ -192,7 +196,7 @@ try:
             try:
                 # читаем следующую строку из генератора логов
                 line = next(log_generator)
-                current_log_line = line
+                current_log_line = clean_line(line)
 
                 # выводим в консоль для отладки
                 print(line)
