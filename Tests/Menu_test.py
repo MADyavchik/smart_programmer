@@ -12,7 +12,8 @@ from log_reader import read_logs, add_log_line, clean_line
 
 scroll_index = 0
 auto_scroll = True
-
+COLOR_NORMAL = (0, 0, 0)       # чёрный
+COLOR_ALERT = (255, 0, 0)      # красный
 
 # GPIO-кнопки
 buttons = {
@@ -200,7 +201,13 @@ try:
 
             for i, (line_text, is_indent) in enumerate(visible_lines[start:end]):
                 x_offset = 10 + (20 if is_indent else 0)
-                txt = font.render(line_text, True, (0, 0, 0))
+                # Если в строке есть "ReportBuilder:", красим в красный
+                if "ReportBuilder:" in line_text:
+                    color = COLOR_ALERT
+                else:
+                    color = COLOR_NORMAL
+
+                txt = font.render(line_text, True, color)
                 surface.blit(txt, (x_offset, y_start + i * line_height))
 
             # ---- ВЫХОД ----
