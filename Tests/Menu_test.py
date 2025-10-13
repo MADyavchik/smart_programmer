@@ -32,7 +32,7 @@ clock = pygame.time.Clock()
 font = pygame.font.Font(None, 32)
 
 # Text wrap
-def wrap_text(text, font, max_width, max_lines=2):
+def wrap_text(text, font, max_width, max_lines=3):
     """
     Делит строку на максимум max_lines,
     перенос по словам для Pygame.
