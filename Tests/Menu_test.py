@@ -8,6 +8,9 @@ from luma.lcd.device import st7789
 from battery_status import get_battery_status  # импортируем функцию
 from log_reader import read_logs
 
+log_lines = []  # буфер логов
+MAX_LOG_HEIGHT = 170  # видимая область для текста
+
 # GPIO-кнопки
 buttons = {
     "up": 5,
@@ -83,6 +86,30 @@ def wrap_text_to_screen(text, font, max_width, max_height, line_spacing=4):
     lines.append(last_line)
 
     return lines[:max_lines]
+
+
+# Add line
+def add_log_line(line, font, max_width, max_height, line_spacing=4):
+    """
+    Добавляет строку в буфер с автоматическим переносом.
+    Возвращает список всех видимых строк на экране.
+    """
+    global log_lines
+
+    # перенос длинной строки
+    wrapped = wrap_text_to_screen(line, font, max_width, max_height, line_spacing)
+
+    log_lines.extend(wrapped)
+
+    # вычисляем высоту всех строк
+    line_height = font.get_linesize() + line_spacing
+    max_lines = max_height // line_height
+
+    # если строк больше чем помещается — обрезаем сверху
+    if len(log_lines) > max_lines:
+        log_lines = log_lines[-max_lines:]
+
+    return log_lines
 
 # Загружаем иконки
 icon_files = [
@@ -199,39 +226,25 @@ try:
                 selected = 0
                 time.sleep(0.2)
 
-        # ---Экран log---
-
+       # --- Экран логов ---
         elif state == STATE_LOGS:
             surface.fill((255, 255, 255))  # белый фон
 
             try:
-                # читаем следующую строку из генератора логов
                 line = next(log_generator)
-                current_log_line = clean_line(line)
+                clean = clean_line(line)
+                print(line)  # отладка в консоль
 
-                # выводим в консоль для отладки
-                print(line)
+                # добавляем в буфер и получаем видимые строки
+                visible_lines = add_log_line(clean, font, max_width=300, max_height=170, line_spacing=4)
 
             except StopIteration:
-                current_log_line = "Лог завершён."
+                visible_lines = add_log_line("Лог завершён.", font, max_width=300, max_height=170, line_spacing=4)
 
-            # отрисовка на дисплее
-            # Удаляем нулевые и другие неотображаемые символы
-            # чистим строку от \x00
-            safe_line = current_log_line.replace("\x00", "")
-
-            # автоматический перенос
-            lines = wrap_text_to_screen(
-                safe_line,
-                font,
-                max_width=300,    # оставляем отступы слева и справа
-                max_height=240,   # высота экрана
-                line_spacing=4
-            )
-
-            y_start = 80
-            for i, line in enumerate(lines):
-                txt = font.render(line, True, (0, 0, 0))
+            # рисуем все видимые строки
+            y_start = 35  # отступ сверху
+            for i, l in enumerate(visible_lines):
+                txt = font.render(l, True, (0,0,0))
                 surface.blit(txt, (10, y_start + i * (font.get_linesize() + 4)))
 
 
