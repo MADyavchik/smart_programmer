@@ -29,41 +29,35 @@ def clean_line(line):
     line = "".join(ch for ch in line if 32 <= ord(ch) <= 126)
     return line
 
-def wrap_text_to_screen(text, font, max_width, max_height, line_spacing=4):
+def wrap_text_to_screen(text, font, max_width, max_height, line_spacing=4, indent=20):
     """
-    Делит текст на строки, чтобы полностью помещался на экране.
-    text       : исходная строка
-    font       : pygame.font.Font
-    max_width  : ширина экрана в пикселях
-    max_height : высота экрана в пикселях
-    line_spacing: расстояние между строками
+    Делит текст на строки для экрана, добавляя отступ для переноса.
+    indent: пиксели для сдвига всех строк кроме первой.
     """
     words = text.split(' ')
     lines = []
     current = ""
     line_height = font.get_linesize()
 
+    first_line = True  # флаг первой строки
+
     for word in words:
         test_line = (current + " " + word).strip()
-        if font.size(test_line)[0] <= max_width:
+        # для вычисления ширины применяем отступ только к переносимым строкам
+        test_width = font.size(test_line)[0] + (0 if first_line else indent)
+        if test_width <= max_width:
             current = test_line
         else:
+            # добавляем текущую строку в список
             lines.append(current)
             current = word
+            first_line = False  # последующие строки будут с отступом
 
     if current:
         lines.append(current)
 
-    # Обрезаем строки, если превышают высоту экрана
+    # ограничиваем по высоте экрана
     max_lines = max_height // (line_height + line_spacing)
-    return lines[:max_lines]
-
-    # Остаток слов — в последнюю строку
-    remaining_words = words[words.index(word):] if len(lines) == max_lines - 1 else []
-    last_line = current + " " + " ".join(remaining_words)
-    last_line = last_line.strip()
-    lines.append(last_line)
-
     return lines[:max_lines]
 
 # Add line

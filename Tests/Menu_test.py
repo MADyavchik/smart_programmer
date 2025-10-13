@@ -168,9 +168,11 @@ try:
 
             # рисуем все видимые строки
             y_start = 35  # отступ сверху
-            for i, l in enumerate(visible_lines):
-                txt = font.render(l, True, (0,0,0))
-                surface.blit(txt, (10, y_start + i * (font.get_linesize() + 4)))
+            for i, line in enumerate(visible_lines):
+                # добавляем сдвиг для переноса
+                x_offset = 10 if i == 0 else 10 + 20  # первая строка без indent, остальные со сдвигом
+                txt = font.render(line, True, (0,0,0))
+                surface.blit(txt, (x_offset, y_start + i * (font.get_linesize() + 4)))
 
 
             # выйти назад по кнопке
