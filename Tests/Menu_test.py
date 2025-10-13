@@ -180,19 +180,19 @@ try:
             if GPIO.input(buttons["up"]) == GPIO.LOW:
                 auto_scroll = False  # отключаем авто
                 scroll_index = max(0, scroll_index - 1)
-                time.sleep(0.15)
+                time.sleep(0.1)
 
             if GPIO.input(buttons["down"]) == GPIO.LOW:
                 auto_scroll = False  # отключаем авто
                 max_scroll = max(0, len(visible_lines) - MAX_VISIBLE_LINES)
                 scroll_index = min(max_scroll, scroll_index + 1)
-                time.sleep(0.15)
+                time.sleep(0.1)
 
             if GPIO.input(buttons["right"]) == GPIO.LOW:
                 # включаем автопрокрутку и прыгаем в конец
                 auto_scroll = True
                 scroll_index = max(0, len(visible_lines) - MAX_VISIBLE_LINES)
-                time.sleep(0.15)
+                time.sleep(0.1)
 
             # ---- ОТРИСОВКА ----
             y_start = 35
