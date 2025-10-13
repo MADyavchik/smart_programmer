@@ -1,3 +1,4 @@
+
 import os
 import time
 import RPi.GPIO as GPIO
@@ -9,8 +10,7 @@ from battery_status import get_battery_status  # импортируем функ
 from log_reader import read_logs, add_log_line, clean_line
 
 
-log_lines = []  # буфер логов
-MAX_LOG_HEIGHT = 170  # видимая область для текста
+
 
 # GPIO-кнопки
 buttons = {
@@ -158,23 +158,37 @@ try:
             try:
                 line = next(log_generator)
                 clean = clean_line(line)
-                print(line)  # отладка в консоль
+                print(line)  # отладка
 
-                # добавляем в буфер и получаем видимые строки
                 visible_lines = add_log_line(clean, font, max_width=300, max_height=170, line_spacing=4)
 
             except StopIteration:
                 visible_lines = add_log_line("Лог завершён.", font, max_width=300, max_height=170, line_spacing=4)
 
-            # рисуем все видимые строки
+            # ---- ПРОКРУТКА КНОПКАМИ ----
+            line_height = font.get_linesize() + 4
+            MAX_VISIBLE_LINES = 170 // line_height  # помещается на экране
+
+            if GPIO.input(buttons["up"]) == GPIO.LOW:
+                scroll_index = max(0, scroll_index - 1)
+                time.sleep(0.15)
+
+            if GPIO.input(buttons["down"]) == GPIO.LOW:
+                max_scroll = max(0, len(visible_lines) - MAX_VISIBLE_LINES)
+                scroll_index = min(max_scroll, scroll_index + 1)
+                time.sleep(0.15)
+
+            # ---- ОТРИСОВКА окна ----
             y_start = 35
-            for i, (line_text, is_indent) in enumerate(visible_lines):
+            start = scroll_index
+            end = scroll_index + MAX_VISIBLE_LINES
+
+            for i, (line_text, is_indent) in enumerate(visible_lines[start:end]):
                 x_offset = 10 + (20 if is_indent else 0)
                 txt = font.render(line_text, True, (0, 0, 0))
-                surface.blit(txt, (x_offset, y_start + i * (font.get_linesize() + 4)))
+                surface.blit(txt, (x_offset, y_start + i * line_height))
 
-
-            # выйти назад по кнопке
+            # ---- ВЫХОД ----
             if GPIO.input(buttons["left"]) == GPIO.LOW:
                 state = STATE_MAIN
                 selected = 0

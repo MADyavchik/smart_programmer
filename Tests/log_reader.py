@@ -1,3 +1,4 @@
+# log_reader.py
 import serial
 import re
 
@@ -6,6 +7,7 @@ ansi_escape = re.compile(r'\x1B\[[0-?]*[ -/]*[@-~]')
 
 
 log_lines = []  # буфер логов
+scroll_index = 0
 MAX_LOG_HEIGHT = 170  # видимая область для текста
 
 def read_logs(port="/dev/ttyS0", baud=115200):
@@ -60,11 +62,4 @@ def add_log_line(line, font, max_width, max_height, line_spacing=4, indent=20):
     global log_lines
     wrapped = wrap_text_to_screen(line, font, max_width, line_spacing, indent)
     log_lines.extend(wrapped)
-
-    # ограничиваем по высоте
-    line_height = font.get_linesize() + line_spacing
-    max_lines = max_height // line_height
-    if len(log_lines) > max_lines:
-        log_lines = log_lines[-max_lines:]
-
-    return log_lines
+    return log_lines  # НЕ обрезаем!
