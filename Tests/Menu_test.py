@@ -163,7 +163,9 @@ try:
                 current_log_line = "Лог завершён."
 
             # отрисовка на дисплее
-            txt = font.render(current_log_line, True, (0, 0, 0))
+            # Удаляем нулевые и другие неотображаемые символы
+            safe_line = "".join(ch for ch in current_log_line if ord(ch) >= 32 or ch in ("\n", "\r"))
+            txt = font.render(safe_line, True, (0, 0, 0))
             surface.blit(txt, (10, 100))
 
 
