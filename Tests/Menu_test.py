@@ -148,12 +148,10 @@ try:
                 line = next(log_manager.generator)
                 if line is not None:
                     log_manager.add_line(line)
-                log_manager.add_line(line)
             except StopIteration:
                 pass
 
             visible_lines, line_height = log_manager.get_visible()
-
 
             # --- Кнопки прокрутки ---
             if GPIO.input(buttons["up"]) == GPIO.LOW:
@@ -176,7 +174,6 @@ try:
                 x_offset = 10 + (20 if is_indent else 0)
                 color = (255,0,0) if log_manager.is_alert_line(line_text) else (0,0,0)
                 surface.blit(font.render(line_text, True, color), (x_offset, y_start + i*line_height))
-
         # --- Обновляем дисплей один раз за цикл ---
         raw_str = pygame.image.tostring(surface, "RGB")
         img = Image.frombytes("RGB", (width, height), raw_str)
