@@ -7,7 +7,7 @@ ansi_escape = re.compile(r'\x1B\[[0-?]*[ -/]*[@-~]')
 
 
 log_lines = []  # буфер логов
-scroll_index = 0
+#scroll_index = 0
 MAX_LOG_HEIGHT = 170  # видимая область для текста
 
 def read_logs(port="/dev/ttyS0", baud=115200):

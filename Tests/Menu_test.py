@@ -10,6 +10,7 @@ from battery_status import get_battery_status  # импортируем функ
 from log_reader import read_logs, add_log_line, clean_line
 
 
+scroll_index = 0
 
 
 # GPIO-кнопки
