@@ -6,6 +6,7 @@ from PIL import Image
 from luma.core.interface.serial import spi
 from luma.lcd.device import st7789
 from battery_status import get_battery_status  # импортируем функцию
+from log_reader import read_logs
 
 # GPIO-кнопки
 buttons = {
@@ -55,6 +56,7 @@ positions = [
 STATE_MAIN = "main"
 STATE_BURN = "burn_menu"
 STATE_INFO = "info"
+STATE_LOGS = "logs"
 state = STATE_MAIN
 
 selected = 0
@@ -100,6 +102,12 @@ try:
                     state = STATE_INFO
                     time.sleep(0.2)
 
+                elif choice == "download":
+                    state = STATE_LOGS
+                    log_generator = read_logs()  # запуск чтения
+                    current_log_line = ""
+                    time.sleep(0.2)
+
         # --- Подменю Burn ---
         elif state == STATE_BURN:
             y_start = 50
@@ -132,6 +140,24 @@ try:
             surface.blit(txt1, (50, 80))
             surface.blit(txt2, (50, 120))
 
+            if GPIO.input(buttons["left"]) == GPIO.LOW:
+                state = STATE_MAIN
+                selected = 0
+                time.sleep(0.2)
+
+        # ---Экран log---
+        elif state == STATE_LOGS:
+            surface.fill((255, 255, 255))  # белый фон
+            try:
+                line = next(log_generator)
+                current_log_line = line
+            except StopIteration:
+                current_log_line = "Лог завершён."
+
+            txt = font.render(current_log_line, True, (0,0,0))
+            surface.blit(txt, (10, 100))
+
+            # выйти назад по кнопке
             if GPIO.input(buttons["left"]) == GPIO.LOW:
                 state = STATE_MAIN
                 selected = 0
