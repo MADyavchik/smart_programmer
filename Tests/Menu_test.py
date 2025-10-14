@@ -131,6 +131,40 @@ try:
                 # -------------------------------
                 time.sleep(0.2)
 
+        # --- Экран логов ---
+        elif state == STATE_LOGS:
+            try:
+                line = next(log_manager.generator)
+                if line is not None:
+                    log_manager.add_line(line)
+            except StopIteration:
+                pass
+
+            visible_lines, line_height = log_manager.get_visible()
+
+            # --- Кнопки прокрутки ---
+            if GPIO.input(buttons["up"]) == GPIO.LOW:
+                log_manager.scroll_up()
+                time.sleep(0.05)
+            if GPIO.input(buttons["down"]) == GPIO.LOW:
+                log_manager.scroll_down()
+                time.sleep(0.05)
+            if GPIO.input(buttons["right"]) == GPIO.LOW:
+                log_manager.scroll_to_end()
+                time.sleep(0.05)
+            if GPIO.input(buttons["left"]) == GPIO.LOW:
+                state = STATE_MAIN
+                selected = 0
+                time.sleep(0.2)
+
+            # --- Отрисовка видимых строк ---
+            y_start = 35
+            for i, (line_text, is_indent) in enumerate(visible_lines):
+                x_offset = 10 + (20 if is_indent else 0)
+                color = (255,0,0) if log_manager.is_alert_line(line_text) else (0,0,0)
+                surface.blit(font.render(line_text, True, color), (x_offset, y_start + i*line_height))
+
+
         # --- Обновление дисплея ---
         raw_str=pygame.image.tostring(surface,"RGB")
         img=Image.frombytes("RGB",(width,height),raw_str)
