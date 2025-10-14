@@ -86,6 +86,7 @@ try:
                     folders=[f for f in os.listdir(base_path) if os.path.isdir(os.path.join(base_path,f))]
                     folders.sort()
                     menu_items = ["Download"] + folders
+                    scroll_offset = 0
                     time.sleep(0.2)
                 elif choice=="info":
                     state=STATE_INFO
@@ -97,28 +98,41 @@ try:
 
         # --- Подменю Burn ---
         elif state == STATE_BURN:
+            VISIBLE_LINES = 4  # сколько элементов помещается на экран
             y_start = 50
-            for i, item in enumerate(menu_items):
-                color = (255, 0, 0) if i == selected else (0, 0, 0)
+
+            # Выводим только видимые строки
+            visible_items = menu_items[scroll_offset:scroll_offset + VISIBLE_LINES]
+            for i, item in enumerate(visible_items):
+                color = (255, 0, 0) if (scroll_offset + i) == selected else (0, 0, 0)
                 surface.blit(font.render(item, True, color), (40, y_start + i*40))
 
             # --- Навигация ---
             if GPIO.input(buttons["up"]) == GPIO.LOW and menu_items:
                 selected = (selected - 1) % len(menu_items)
+                # Если выбранный элемент вышел выше текущего окна
+                if selected < scroll_offset:
+                    scroll_offset = selected
                 time.sleep(0.2)
+
             elif GPIO.input(buttons["down"]) == GPIO.LOW and menu_items:
                 selected = (selected + 1) % len(menu_items)
+                # Если выбранный элемент вышел ниже текущего окна
+                if selected >= scroll_offset + VISIBLE_LINES:
+                    scroll_offset = selected - VISIBLE_LINES + 1
                 time.sleep(0.2)
+
             elif GPIO.input(buttons["left"]) == GPIO.LOW:
                 state = STATE_MAIN
                 selected = 0
+                scroll_offset = 0
                 time.sleep(0.2)
+
             elif GPIO.input(buttons["reset"]) == GPIO.LOW and menu_items:
                 chosen_item = menu_items[selected]
                 logging.info(f"Выбран пункт: {chosen_item}")
 
                 if chosen_item == "Download":
-                    # Запускаем процесс скачивания с сервера
                     logging.info("🔽 Запуск скачивания прошивки с сервера...")
                     local_file = download_latest_firmware()
                     if local_file:
@@ -126,7 +140,6 @@ try:
                     else:
                         logging.error("Скачивание не удалось")
                 else:
-                    # Запуск прошивки через класс
                     firmware_path = os.path.join(flasher.flash_dir, chosen_item)
                     if os.path.exists(firmware_path):
                         result = flasher.flash_firmware(chosen_item)
