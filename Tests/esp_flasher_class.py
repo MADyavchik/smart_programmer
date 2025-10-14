@@ -17,6 +17,10 @@ class ESPFlasher:
         self.en_pin = en_pin
         self.mac_address = None
         import RPi.GPIO as GPIO
+
+        GPIO.setwarnings(False)   # Чтобы убрать предупреждения
+        GPIO.setmode(GPIO.BCM)
+
         GPIO.setup(self.boot_pin, GPIO.OUT, initial=GPIO.HIGH)
         GPIO.setup(self.en_pin, GPIO.OUT, initial=GPIO.HIGH)
 
