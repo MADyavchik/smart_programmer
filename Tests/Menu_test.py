@@ -77,7 +77,7 @@ folders = []  # список папок для подменю
 try:
     running = True
     while running:
-        surface.fill((255, 255, 255))  # каждый кадр чистим экран
+        surface.fill((255, 255, 0))  # каждый кадр чистим экран
 
         # --- Главное меню ---
         if state == STATE_MAIN:
