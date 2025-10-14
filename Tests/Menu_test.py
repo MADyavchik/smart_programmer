@@ -128,6 +128,8 @@ try:
                         logging.error("Прошивка завершилась с ошибкой.")
                 else:
                     logging.error(f"Папка прошивки не найдена: {firmware_path}")
+                while GPIO.input(buttons["reset"]) == GPIO.LOW:
+                    time.sleep(0.05)
                 # -------------------------------
                 time.sleep(0.2)
 
