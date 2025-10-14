@@ -41,4 +41,4 @@ time.sleep(1)
 
 # Запускаем основную программу
 
-subprocess.run(["python3", "/root/smart_programmer/Tests/Menu_test.py"])
+subprocess.run(["python3", "/root/smart_programmer/Menu_test.py"])
