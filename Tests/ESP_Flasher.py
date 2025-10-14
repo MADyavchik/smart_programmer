@@ -5,8 +5,8 @@ import logging
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-BOOT_PIN = 18
-EN_PIN = 16
+BOOT_PIN = 24
+EN_PIN = 23
 
 # ⚠️ Не вызываем GPIO.setmode и setup здесь, это делается в основном меню
 def enter_bootloader():
