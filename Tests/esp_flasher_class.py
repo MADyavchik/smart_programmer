@@ -4,6 +4,8 @@ import subprocess
 import logging
 import re
 import time
+import RPi.GPIO as GPIO
+import glob
 
 logging.basicConfig(level=logging.INFO)
 
@@ -15,7 +17,7 @@ class ESPFlasher:
 
     # ===== Bootloader =====
     def enter_bootloader(self, boot_pin, en_pin):
-        import RPi.GPIO as GPIO
+
         logging.info("🔌 Перевод ESP32 в режим загрузчика...")
         GPIO.output(boot_pin, GPIO.LOW)
         time.sleep(0.15)
@@ -25,7 +27,7 @@ class ESPFlasher:
         logging.info("ESP32 теперь в режиме загрузчика.")
 
     def exit_bootloader(self, boot_pin, en_pin):
-        import RPi.GPIO as GPIO
+
         logging.info("🛑 Выход из режима загрузчика...")
         GPIO.output(boot_pin, GPIO.HIGH)
         time.sleep(0.1)
@@ -124,7 +126,7 @@ class ESPFlasher:
     # ===== Вспомогательные функции =====
 
     def catch_name(self, path, suffix):
-        import glob
+
         matches = glob.glob(os.path.join(path, f"*{suffix}"))
         if matches:
             file = matches[0]  # берем первый
