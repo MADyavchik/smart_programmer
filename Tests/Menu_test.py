@@ -134,10 +134,10 @@ try:
             elif GPIO.input(buttons["reset"]) == GPIO.LOW and folders:
                 chosen_folder = folders[selected]
                 print(f"Выбрана папка: {chosen_folder}")  # пока просто вывод в консоль
-                from ESP_Flasher import enter_bootloader, exit_bootloader
-                enter_bootloader()
-                time.sleep(3)
-                exit_bootloader()
+                #from ESP_Flasher import enter_bootloader, exit_bootloader
+                #enter_bootloader()
+                #time.sleep(3)
+                #exit_bootloader()
 
                 # здесь можно:
                 # 1. перейти в следующее меню
