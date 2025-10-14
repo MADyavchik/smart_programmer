@@ -18,10 +18,10 @@ GPIO.setmode(GPIO.BCM)
 for pin in buttons.values():
     GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
-BOOT_PIN = 24
-EN_PIN = 23
-GPIO.setup(BOOT_PIN, GPIO.OUT, initial=GPIO.HIGH)
-GPIO.setup(EN_PIN, GPIO.OUT, initial=GPIO.HIGH)
+#BOOT_PIN = 24
+#EN_PIN = 23
+#GPIO.setup(BOOT_PIN, GPIO.OUT, initial=GPIO.HIGH)
+#GPIO.setup(EN_PIN, GPIO.OUT, initial=GPIO.HIGH)
 
 # --- Pygame и дисплей ---
 pygame.init()

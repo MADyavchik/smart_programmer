@@ -4,16 +4,21 @@ import subprocess
 import logging
 import re
 import time
-import RPi.GPIO as GPIO
+
 import glob
 
 logging.basicConfig(level=logging.INFO)
 
 class ESPFlasher:
-    def __init__(self, port="/dev/ttyS0", flash_dir="esp"):
+    def __init__(self, port="/dev/ttyS0", flash_dir="esp", boot_pin=24, en_pin=23):
         self.port = port
         self.flash_dir = flash_dir
+        self.boot_pin = boot_pin
+        self.en_pin = en_pin
         self.mac_address = None
+        import RPi.GPIO as GPIO
+        GPIO.setup(self.boot_pin, GPIO.OUT, initial=GPIO.HIGH)
+        GPIO.setup(self.en_pin, GPIO.OUT, initial=GPIO.HIGH)
 
     # ===== Bootloader =====
     def enter_bootloader(self, boot_pin, en_pin):
@@ -140,9 +145,7 @@ class ESPFlasher:
 
 
     def enter_bootloader_func(self):
-        from Menu_test import BOOT_PIN, EN_PIN
-        self.enter_bootloader(BOOT_PIN, EN_PIN)
+        self.enter_bootloader(self.boot_pin, self.en_pin)
 
     def exit_bootloader_func(self):
-        from Menu_test import BOOT_PIN, EN_PIN
-        self.exit_bootloader(BOOT_PIN, EN_PIN)
+        self.exit_bootloader(self.boot_pin, self.en_pin)
