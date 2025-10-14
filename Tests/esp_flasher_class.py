@@ -68,10 +68,11 @@ class ESPFlasher:
             logging.error(f"❌ Папка с прошивкой не найдена: {firmware_path}")
             return False
 
-        bootloader = os.path.join(firmware_path, "bootloader_0x1000.bin")
-        firmware = os.path.join(firmware_path, "firmware_0x10000.bin")
-        partitions = os.path.join(firmware_path, "partitions_0x8000.bin")
-        ota = os.path.join(firmware_path, "ota_data_initial_0xe000.bin")
+        bootloader = self.catch_name(firmware_path, "_0x1000.bin")
+        firmware = self.catch_name(firmware_path, "_0x10000.bin")
+        partitions = self.catch_name(firmware_path, "_0x8000.bin")
+        ota = self.catch_name(firmware_path, "_0xe000.bin")
+        nvs = self.catch_name(firmware_path, "_0x9000.bin")
 
         for file in [bootloader, firmware, partitions, ota]:
             if not os.path.exists(file):
@@ -105,7 +106,8 @@ class ESPFlasher:
                 "0x1000", bootloader,
                 "0x10000", firmware,
                 "0x8000", partitions,
-                "0xe000", ota
+                "0xe000", ota,
+                "0x9000", nvs
             ]
 
             subprocess.run(flash_args, check=True)
@@ -119,7 +121,22 @@ class ESPFlasher:
             self.exit_bootloader_func()
             return False
 
-    # ===== Вспомогательные функции для работы с пинами =====
+    # ===== Вспомогательные функции =====
+
+    def catch_name(self, path, suffix):
+        import glob
+        matches = glob.glob(os.path.join(path, suffix))
+        if matches:
+            file = matches[0]  # берем первый
+            print(f"Найден NVS-файл: {file}")
+            return file
+
+        else:
+            print(f"Файл с окончанием {suffix} не найден")
+            return None
+
+
+
     def enter_bootloader_func(self):
         from Menu_test import BOOT_PIN, EN_PIN
         self.enter_bootloader(BOOT_PIN, EN_PIN)
