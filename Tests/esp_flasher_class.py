@@ -111,9 +111,9 @@ class ESPFlasher:
 
     # ===== Вспомогательные функции для работы с пинами =====
     def enter_bootloader_func(self):
-        from main_menu import BOOT_PIN, EN_PIN
+        from Menu_test import BOOT_PIN, EN_PIN
         self.enter_bootloader(BOOT_PIN, EN_PIN)
 
     def exit_bootloader_func(self):
-        from main_menu import BOOT_PIN, EN_PIN
+        from Menu_test import BOOT_PIN, EN_PIN
         self.exit_bootloader(BOOT_PIN, EN_PIN)
