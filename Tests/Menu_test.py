@@ -120,6 +120,7 @@ try:
                 color = (255, 0, 0) if i == selected else (0, 0, 0)
                 surface.blit(font.render(folder, True, color), (40, y_start + i*40))
 
+            # Кнопки навигации
             if GPIO.input(buttons["up"]) == GPIO.LOW and folders:
                 selected = (selected-1) % len(folders)
             elif GPIO.input(buttons["down"]) == GPIO.LOW and folders:
@@ -127,6 +128,23 @@ try:
             elif GPIO.input(buttons["left"]) == GPIO.LOW:
                 state = STATE_MAIN
                 selected = 0
+                time.sleep(0.2)
+
+            # ✅ Обработка нажатия reset — выбор папки
+            elif GPIO.input(buttons["reset"]) == GPIO.LOW and folders:
+                chosen_folder = folders[selected]
+                print(f"Выбрана папка: {chosen_folder}")  # пока просто вывод в консоль
+                from ESP_Flasher import enter_bootloader, exit_bootloader
+                enter_bootloader()
+                time.sleep(3)
+                exit_bootloader()
+
+                # здесь можно:
+                # 1. перейти в следующее меню
+                # 2. начать прошивку
+                # 3. показать содержимое выбранной папки
+                # пример перехода на новый экран:
+                # state = "burn_selected"
                 time.sleep(0.2)
 
         # --- Экран Info ---
