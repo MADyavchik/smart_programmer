@@ -4,7 +4,7 @@ import subprocess
 import logging
 import re
 import time
-
+import RPi.GPIO as GPIO
 import glob
 
 logging.basicConfig(level=logging.INFO)
@@ -16,7 +16,7 @@ class ESPFlasher:
         self.boot_pin = boot_pin
         self.en_pin = en_pin
         self.mac_address = None
-        import RPi.GPIO as GPIO
+
 
         GPIO.setwarnings(False)   # Чтобы убрать предупреждения
         GPIO.setmode(GPIO.BCM)
