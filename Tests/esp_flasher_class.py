@@ -85,7 +85,7 @@ class ESPFlasher:
 
             logging.info("Прожигаем фьюзы...")
             subprocess.run([
-                "espefuse.py", "--chip", "esp32", "-p", self.port, "set_flash_voltage", "3.3V", "--do-not-confirm"
+                "espefuse.py", "--chip", "esp32", "-p", self.port, "set_flash_voltage", "3.3V", "--yes"
             ], check=True)
 
 
