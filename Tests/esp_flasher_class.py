@@ -82,11 +82,21 @@ class ESPFlasher:
             logging.info("🔌 Входим в bootloader...")
             self.enter_bootloader_func()
 
+
+            logging.info("Прожигаем фьюзы...")
+            subprocess.run([
+                "espefuse.py", "--chip", "esp32", "-p", self.port, "set_flash_voltage", "3.3V", "--do-not-confirm"
+            ], check=True)
+
+
             logging.info("🧹 Очистка флеша...")
             subprocess.run(
                 ["esptool.py", "--chip", "esp32", "-b", "460800", "-p", self.port, "erase_flash"],
                 check=True
             )
+
+            logging.info("🔌 Повторно входим в bootloader...")
+            self.enter_bootloader_func()
 
             logging.info("📦 Прошивка...")
             flash_args = [
