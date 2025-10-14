@@ -18,10 +18,7 @@ GPIO.setmode(GPIO.BCM)
 for pin in buttons.values():
     GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
-#BOOT_PIN = 24
-#EN_PIN = 23
-#GPIO.setup(BOOT_PIN, GPIO.OUT, initial=GPIO.HIGH)
-#GPIO.setup(EN_PIN, GPIO.OUT, initial=GPIO.HIGH)
+
 
 # --- Pygame и дисплей ---
 pygame.init()
@@ -87,6 +84,7 @@ try:
                     base_path="/root/smart_programmer/Прошивки"
                     folders=[f for f in os.listdir(base_path) if os.path.isdir(os.path.join(base_path,f))]
                     folders.sort()
+                    menu_items = ["Download"] + folders
                     time.sleep(0.2)
                 elif choice=="info":
                     state=STATE_INFO
@@ -99,39 +97,46 @@ try:
         # --- Подменю Burn ---
         elif state == STATE_BURN:
             y_start = 50
-            for i, folder in enumerate(folders):
+            for i, item in enumerate(menu_items):
                 color = (255, 0, 0) if i == selected else (0, 0, 0)
-                surface.blit(font.render(folder, True, color), (40, y_start + i*40))
+                surface.blit(font.render(item, True, color), (40, y_start + i*40))
 
             # --- Навигация ---
-            if GPIO.input(buttons["up"]) == GPIO.LOW and folders:
-                selected = (selected - 1) % len(folders)
+            if GPIO.input(buttons["up"]) == GPIO.LOW and menu_items:
+                selected = (selected - 1) % len(menu_items)
                 time.sleep(0.2)
-            elif GPIO.input(buttons["down"]) == GPIO.LOW and folders:
-                selected = (selected + 1) % len(folders)
+            elif GPIO.input(buttons["down"]) == GPIO.LOW and menu_items:
+                selected = (selected + 1) % len(menu_items)
                 time.sleep(0.2)
             elif GPIO.input(buttons["left"]) == GPIO.LOW:
                 state = STATE_MAIN
                 selected = 0
                 time.sleep(0.2)
-            elif GPIO.input(buttons["reset"]) == GPIO.LOW and folders:
-                chosen_folder = folders[selected]
-                logging.info(f"Выбрана папка: {chosen_folder}")
-                # -------------------------------
-                # Запуск прошивки через класс
-                firmware_path = os.path.join(flasher.flash_dir, chosen_folder)
-                if os.path.exists(firmware_path):
-                    result = flasher.flash_firmware(chosen_folder)
-                    if result:
-                        logging.info("Прошивка успешно завершена!")
-                    else:
-                        logging.error("Прошивка завершилась с ошибкой.")
+            elif GPIO.input(buttons["reset"]) == GPIO.LOW and menu_items:
+                chosen_item = menu_items[selected]
+                logging.info(f"Выбран пункт: {chosen_item}")
+
+                if chosen_item == "Download":
+                    # Запускаем процесс скачивания с сервера
+                    logging.info("🔽 Запуск скачивания прошивки с сервера...")
+                    # Тут будет функция, которая загружает прошивку
+                    #download_latest_firmware()  # <-- твоя функция для скачивания
                 else:
-                    logging.error(f"Папка прошивки не найдена: {firmware_path}")
+                    # Запуск прошивки через класс
+                    firmware_path = os.path.join(flasher.flash_dir, chosen_item)
+                    if os.path.exists(firmware_path):
+                        result = flasher.flash_firmware(chosen_item)
+                        if result:
+                            logging.info("Прошивка успешно завершена!")
+                        else:
+                            logging.error("Прошивка завершилась с ошибкой.")
+                    else:
+                        logging.error(f"Папка прошивки не найдена: {firmware_path}")
+
                 while GPIO.input(buttons["reset"]) == GPIO.LOW:
                     time.sleep(0.05)
-                # -------------------------------
-                time.sleep(0.2)
+
+            time.sleep(0.2)
 
         # --- Экран логов ---
         elif state == STATE_LOGS:
