@@ -73,7 +73,7 @@ class ESPFlasher:
 
     # ===== Прошивка =====
     def flash_firmware(self, firmware_name):
-        #firmware_name = firmware_name.lower()
+
         firmware_path = os.path.join(self.flash_dir, firmware_name)
         if not os.path.exists(firmware_path):
             logging.error(f"❌ Папка с прошивкой не найдена: {firmware_path}")
@@ -92,7 +92,7 @@ class ESPFlasher:
 
         try:
             logging.info("🔌 Входим в bootloader...")
-            self.enter_bootloader_func()
+            self.enter_bootloader(self.boot_pin, self.en_pin)
 
 
             logging.info("Прожигаем фьюзы...")
@@ -108,7 +108,7 @@ class ESPFlasher:
             )
 
             logging.info("🔌 Повторно входим в bootloader...")
-            self.enter_bootloader_func()
+            self.enter_bootloader(self.boot_pin, self.en_pin)
 
             logging.info("📦 Прошивка...")
             flash_args = [
@@ -124,12 +124,12 @@ class ESPFlasher:
             subprocess.run(flash_args, check=True)
             logging.info("✅ Прошивка завершена")
 
-            self.exit_bootloader_func()
+            self.exit_bootloader(self.boot_pin, self.en_pin)
             return True
 
         except subprocess.CalledProcessError as e:
             logging.error(f"❌ Ошибка прошивки: {e}")
-            self.exit_bootloader_func()
+            self.exit_bootloader(self.boot_pin, self.en_pin)
             return False
 
     # ===== Вспомогательные функции =====
@@ -148,8 +148,3 @@ class ESPFlasher:
 
 
 
-    def enter_bootloader_func(self):
-        self.enter_bootloader(self.boot_pin, self.en_pin)
-
-    def exit_bootloader_func(self):
-        self.exit_bootloader(self.boot_pin, self.en_pin)
