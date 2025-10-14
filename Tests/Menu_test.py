@@ -107,9 +107,9 @@ try:
             elif GPIO.input(buttons["reset"])==GPIO.LOW and folders:
                 chosen_folder=folders[selected]
                 print(f"Выбрана папка: {chosen_folder}")
-                enter_bootloader()
+                enter_bootloader(BOOT_PIN, EN_PIN)
                 time.sleep(3)
-                exit_bootloader()
+                exit_bootloader(BOOT_PIN, EN_PIN)
                 time.sleep(0.2)
 
         # --- Обновление дисплея ---

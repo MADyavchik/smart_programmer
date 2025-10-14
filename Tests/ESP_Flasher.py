@@ -5,25 +5,24 @@ import logging
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-BOOT_PIN = 24
-EN_PIN = 23
+
 
 # ⚠️ Не вызываем GPIO.setmode и setup здесь, это делается в основном меню
-def enter_bootloader():
+def enter_bootloader(boot_pin, en_pin):
     logging.info("Перевод ESP32 в режим загрузчика...")
-    GPIO.output(BOOT_PIN, GPIO.LOW)
+    GPIO.output(boot_pin, GPIO.LOW)
     time.sleep(0.15)
-    GPIO.output(EN_PIN, GPIO.LOW)
+    GPIO.output(en_pin, GPIO.LOW)
     time.sleep(0.1)
-    GPIO.output(EN_PIN, GPIO.HIGH)
+    GPIO.output(en_pin, GPIO.HIGH)
     logging.info("ESP32 теперь в режиме загрузчика.")
 
-def exit_bootloader():
+def exit_bootloader(boot_pin, en_pin):
     logging.info("Выход из режима загрузчика...")
-    GPIO.output(BOOT_PIN, GPIO.HIGH)
+    GPIO.output(boot_pin, GPIO.HIGH)
     time.sleep(0.1)
-    GPIO.output(EN_PIN, GPIO.LOW)
+    GPIO.output(en_pin, GPIO.LOW)
     time.sleep(0.12)
-    GPIO.output(EN_PIN, GPIO.HIGH)
+    GPIO.output(en_pin, GPIO.HIGH)
     time.sleep(0.8)
     logging.info("ESP32 перезагружена в нормальный режим.")
