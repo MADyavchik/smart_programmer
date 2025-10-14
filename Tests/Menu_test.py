@@ -37,7 +37,7 @@ pygame.init()
 width, height = 320, 240
 surface = pygame.Surface((width, height))
 clock = pygame.time.Clock()
-font = pygame.font.Font(None, 20)
+font = pygame.font.Font(None, 22)
 
 log_manager = LogManager(font, max_width=300, max_height=170, line_spacing=4)
 
