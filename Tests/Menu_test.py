@@ -1,13 +1,16 @@
 # --- main_menu.py ---
 import os
 import time
+import logging
 import RPi.GPIO as GPIO
 import pygame
 from PIL import Image
 from luma.core.interface.serial import spi
 from luma.lcd.device import st7789
 from log_reader import LogManager
-from ESP_Flasher import enter_bootloader, exit_bootloader
+from esp_flasher_class import ESPFlasher
+
+flasher = ESPFlasher(port="/dev/ttyS0", flash_dir="/root/smart_programmer/Прошивки")
 
 # --- GPIO и кнопки ---
 buttons = {"up":5,"down":19,"left":6,"right":26,"reset":13}
@@ -94,22 +97,38 @@ try:
                     time.sleep(0.2)
 
         # --- Подменю Burn ---
-        elif state==STATE_BURN:
-            y_start=50
-            for i,folder in enumerate(folders):
-                color=(255,0,0) if i==selected else (0,0,0)
-                surface.blit(font.render(folder,True,color),(40,y_start+i*40))
+        elif state == STATE_BURN:
+            y_start = 50
+            for i, folder in enumerate(folders):
+                color = (255, 0, 0) if i == selected else (0, 0, 0)
+                surface.blit(font.render(folder, True, color), (40, y_start + i*40))
 
             # --- Навигация ---
-            if GPIO.input(buttons["up"])==GPIO.LOW and folders: selected=(selected-1)%len(folders)
-            elif GPIO.input(buttons["down"])==GPIO.LOW and folders: selected=(selected+1)%len(folders)
-            elif GPIO.input(buttons["left"])==GPIO.LOW: state=STATE_MAIN; selected=0; time.sleep(0.2)
-            elif GPIO.input(buttons["reset"])==GPIO.LOW and folders:
-                chosen_folder=folders[selected]
-                print(f"Выбрана папка: {chosen_folder}")
-                enter_bootloader(BOOT_PIN, EN_PIN)
-                time.sleep(3)
-                exit_bootloader(BOOT_PIN, EN_PIN)
+            if GPIO.input(buttons["up"]) == GPIO.LOW and folders:
+                selected = (selected - 1) % len(folders)
+                time.sleep(0.2)
+            elif GPIO.input(buttons["down"]) == GPIO.LOW and folders:
+                selected = (selected + 1) % len(folders)
+                time.sleep(0.2)
+            elif GPIO.input(buttons["left"]) == GPIO.LOW:
+                state = STATE_MAIN
+                selected = 0
+                time.sleep(0.2)
+            elif GPIO.input(buttons["reset"]) == GPIO.LOW and folders:
+                chosen_folder = folders[selected]
+                logging.info(f"Выбрана папка: {chosen_folder}")
+                # -------------------------------
+                # Запуск прошивки через класс
+                firmware_path = os.path.join(flasher.flash_dir, chosen_folder)
+                if os.path.exists(firmware_path):
+                    result = flasher.flash_firmware(chosen_folder)
+                    if result:
+                        logging.info("Прошивка успешно завершена!")
+                    else:
+                        logging.error("Прошивка завершилась с ошибкой.")
+                else:
+                    logging.error(f"Папка прошивки не найдена: {firmware_path}")
+                # -------------------------------
                 time.sleep(0.2)
 
         # --- Обновление дисплея ---
