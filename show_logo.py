@@ -40,5 +40,5 @@ GPIO.output(12, GPIO.HIGH)
 time.sleep(1)
 
 # Запускаем основную программу
-GPIO.cleanup()
+
 subprocess.run(["python3", "/root/smart_programmer/Tests/Menu_test.py"])
