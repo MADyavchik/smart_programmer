@@ -9,6 +9,7 @@ from luma.core.interface.serial import spi
 from luma.lcd.device import st7789
 from log_reader import LogManager
 from esp_flasher_class import ESPFlasher
+from firmwares_download import download_latest_firmware
 
 flasher = ESPFlasher(port="/dev/ttyS0", flash_dir="/root/smart_programmer/Прошивки")
 
@@ -119,8 +120,11 @@ try:
                 if chosen_item == "Download":
                     # Запускаем процесс скачивания с сервера
                     logging.info("🔽 Запуск скачивания прошивки с сервера...")
-                    # Тут будет функция, которая загружает прошивку
-                    #download_latest_firmware()  # <-- твоя функция для скачивания
+                    local_file = download_latest_firmware()
+                    if local_file:
+                        logging.info(f"Файл скачан: {local_file}")
+                    else:
+                        logging.error("Скачивание не удалось")
                 else:
                     # Запуск прошивки через класс
                     firmware_path = os.path.join(flasher.flash_dir, chosen_item)
