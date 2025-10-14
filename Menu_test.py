@@ -113,20 +113,20 @@ try:
                 # Если выбранный элемент вышел выше текущего окна
                 if selected < scroll_offset:
                     scroll_offset = selected
-                time.sleep(0.2)
+                time.sleep(0.05)
 
             elif GPIO.input(buttons["down"]) == GPIO.LOW and menu_items:
                 selected = (selected + 1) % len(menu_items)
                 # Если выбранный элемент вышел ниже текущего окна
                 if selected >= scroll_offset + VISIBLE_LINES:
                     scroll_offset = selected - VISIBLE_LINES + 1
-                time.sleep(0.2)
+                time.sleep(0.05)
 
             elif GPIO.input(buttons["left"]) == GPIO.LOW:
                 state = STATE_MAIN
                 selected = 0
                 scroll_offset = 0
-                time.sleep(0.2)
+                time.sleep(0.05)
 
             elif GPIO.input(buttons["reset"]) == GPIO.LOW and menu_items:
                 chosen_item = menu_items[selected]
