@@ -62,7 +62,7 @@ class ESPFlasher:
 
     # ===== Прошивка =====
     def flash_firmware(self, firmware_name):
-        firmware_name = firmware_name.lower()
+        #firmware_name = firmware_name.lower()
         firmware_path = os.path.join(self.flash_dir, firmware_name)
         if not os.path.exists(firmware_path):
             logging.error(f"❌ Папка с прошивкой не найдена: {firmware_path}")
