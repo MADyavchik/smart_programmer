@@ -125,7 +125,7 @@ class ESPFlasher:
 
     def catch_name(self, path, suffix):
         import glob
-        matches = glob.glob(os.path.join(path, suffix))
+        matches = glob.glob(os.path.join(path, f"*{suffix}"))
         if matches:
             file = matches[0]  # берем первый
             print(f"Найден NVS-файл: {file}")
@@ -133,7 +133,7 @@ class ESPFlasher:
 
         else:
             print(f"Файл с окончанием {suffix} не найден")
-            return None
+            return False
 
 
 
