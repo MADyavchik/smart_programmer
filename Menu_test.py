@@ -82,7 +82,7 @@ try:
                 if choice=="burn":
                     state=STATE_BURN
                     selected=0
-                    base_path="/root/smart_programmer/Прошивки"
+                    base_path="/root/smart_programmer/firmware"
                     folders=[f for f in os.listdir(base_path) if os.path.isdir(os.path.join(base_path,f))]
                     folders.sort()
                     menu_items = ["Download"] + folders
