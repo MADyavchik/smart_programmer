@@ -97,16 +97,23 @@ class ESPFlasher:
                 logging.error(f"❌ Файл не найден: {file}")
                 return False
 
-        # Дальше запускаем стандартный процесс прошивки
         try:
             logging.info("🔌 Входим в bootloader...")
             self.enter_bootloader(self.boot_pin, self.en_pin)
+
+            logging.info("🔌 Прожигаем фьюзы...")
+            subprocess.run([
+                "espefuse.py", "--chip", "esp32", "-p", self.port, "--do-not-confirm", "set_flash_voltage", "3.3V"
+            ], check=True)
 
             logging.info("🧹 Очистка флеша...")
             subprocess.run(
                 ["esptool.py", "--chip", "esp32", "-b", "460800", "-p", self.port, "erase_flash"],
                 check=True
             )
+
+            logging.info("🔌 Повторно входим в bootloader...")
+            self.enter_bootloader(self.boot_pin, self.en_pin)
 
             logging.info("📦 Прошивка...")
             flash_args = [
