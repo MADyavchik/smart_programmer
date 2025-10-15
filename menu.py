@@ -191,7 +191,7 @@ class FlashVariant(Screen):
             logging.info(f"Выбран вариант прошивки: {chosen_item}")
 
             # формируем полный путь к бинарнику
-            firmware_file = os.path.join(self.version_path, f"{chosen_item}_a_0x9000.bin")
+            firmware_file = os.path.join(self.version_path, f"{chosen_item}_0x9000.bin")
             logging.info(f"Путь к файлу: {firmware_file}")
 
             if os.path.exists(firmware_file):
