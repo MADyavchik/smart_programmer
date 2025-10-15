@@ -145,58 +145,63 @@ class BurnMenu(Screen):
 
 # --- Подменю Flash ---
 class FlashVariant(Screen):
-    def __init__(self, firmware_version_path):
-        """
-        firmware_version_path: полный путь к папке с выбранной версией прошивки
-        """
+    def __init__(self, version_path):
         super().__init__()
-        self.base_path = firmware_version_path
-        # Пример списка вариантов прошивки
-        # Позже можно заменить на динамическое чтение файлов в папке
-        self.menu_items = ["Variant A", "Variant B"]
+        self.version_path = version_path  # путь к папке с выбранной версией прошивки
+
+        # пока вручную список вариантов, позже можно динамически через os.listdir
+        self.menu_items = ["battery_sw", "battery_lr", "sw", "master_lr", "repeater_lr"]
+
         self.scroll_offset = 0
         self.VISIBLE_LINES = 4
         self.y_start = 50
 
     def handle_input(self):
         global current_screen
-        # Навигация по списку
         if GPIO.input(buttons["up"]) == GPIO.LOW:
             self.selected = (self.selected - 1) % len(self.menu_items)
             if self.selected < self.scroll_offset:
                 self.scroll_offset = self.selected
             time.sleep(0.05)
+
         elif GPIO.input(buttons["down"]) == GPIO.LOW:
             self.selected = (self.selected + 1) % len(self.menu_items)
             if self.selected >= self.scroll_offset + self.VISIBLE_LINES:
                 self.scroll_offset = self.selected - self.VISIBLE_LINES + 1
             time.sleep(0.05)
-        # Возврат назад в меню версий
+
         elif GPIO.input(buttons["left"]) == GPIO.LOW:
+            # возвращаемся к меню версий
             current_screen = BurnMenu()
             time.sleep(0.05)
-        # Выбор варианта прошивки
-        elif GPIO.input(buttons["reset"]) == GPIO.LOW:
-            chosen_variant = self.menu_items[self.selected]
-            logging.info(f"Выбран вариант прошивки: {chosen_variant}")
-            # Здесь можно вызвать flasher с полным путем к выбранному варианту
-            variant_path = os.path.join(self.base_path, chosen_variant)
-            if os.path.exists(variant_path):
-                flasher.flash_firmware(variant_path)
-            else:
-                logging.error(f"Вариант прошивки не найден: {variant_path}")
 
-            # Ждем отпускания кнопки
+        elif GPIO.input(buttons["reset"]) == GPIO.LOW:
+            chosen_item = self.menu_items[self.selected]
+            logging.info(f"Выбран вариант прошивки: {chosen_item}")
+
+            # формируем полный путь к бинарнику
+            firmware_file = os.path.join(self.version_path, f"{chosen_item}_a_0x9000.bin")
+            logging.info(f"Путь к файлу: {firmware_file}")
+
+            if os.path.exists(firmware_file):
+                result = flasher.flash_firmware(firmware_file)
+                if result:
+                    logging.info("✅ Прошивка завершена успешно!")
+                else:
+                    logging.error("❌ Прошивка завершилась с ошибкой")
+            else:
+                logging.error(f"❌ Файл прошивки не найден: {firmware_file}")
+
+            # ждём отпускания кнопки
             while GPIO.input(buttons["reset"]) == GPIO.LOW:
                 time.sleep(0.05)
 
     def draw(self, surface):
         surface.fill((255, 255, 0))
-        visible_items = self.menu_items[self.scroll_offset:self.scroll_offset+self.VISIBLE_LINES]
+        visible_items = self.menu_items[self.scroll_offset:self.scroll_offset + self.VISIBLE_LINES]
         for i, item in enumerate(visible_items):
-            color = (255, 0, 0) if (self.scroll_offset+i) == self.selected else (0, 0, 0)
-            surface.blit(font.render(item, True, color), (40, self.y_start+i*40))
-
+            color = (255, 0, 0) if (self.scroll_offset + i) == self.selected else (0, 0, 0)
+            surface.blit(font.render(item, True, color), (40, self.y_start + i * 40))
 
 
 # --- Экран логов ---
