@@ -8,8 +8,7 @@ SERVER_URL = "https://tn.zitsky.com/flasher/eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9
 DOWNLOAD_DIR = "firmware"
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
-def download_latest_firmware():
-    """Скачивает последнюю версию прошивки с сервера и распаковывает архив"""
+def download_last_three_firmwares():
     try:
         response = requests.get(SERVER_URL)
         response.raise_for_status()
@@ -18,43 +17,56 @@ def download_latest_firmware():
         firmwares = data.get("firmwares", [])
         if not firmwares:
             print("❌ Нет доступных прошивок")
-            return None
+            return []
 
         print("\n📦 Доступные прошивки:")
         for fw in firmwares:
             print(f"  • Версия: {fw['version']}, Группа: {fw['group']}, Дата: {fw['created_at']}")
 
+        # сортируем по номеру
         firmwares.sort(key=lambda x: version.parse(x["version"]))
-        latest = firmwares[-1]
 
-        zip_url = latest["zip"]
-        version_str = latest["version"]
-        file_name = f"{version_str}.zip"
-        local_path = os.path.join(DOWNLOAD_DIR, file_name)
+        # берём последние три
+        last_three = firmwares[-3:]
+        saved_paths = []
 
-        # --- Скачивание ---
-        with requests.get(zip_url, stream=True) as r:
-            r.raise_for_status()
-            with open(local_path, "wb") as f:
-                for chunk in r.iter_content(chunk_size=8192):
-                    f.write(chunk)
+        for fw in last_three:
+            version_str = fw["version"]
+            zip_url = fw["zip"]
+            file_name = f"{version_str}.zip"
+            local_path = os.path.join(DOWNLOAD_DIR, file_name)
+            extract_dir = os.path.join(DOWNLOAD_DIR, version_str)
 
-        print(f"✅ Прошивка {version_str} скачана: {local_path}")
+            # если распакованная версия уже есть — пропускаем
+            if os.path.exists(extract_dir):
+                print(f"⚠ Папка {extract_dir} уже существует — пропускаем загрузку")
+                saved_paths.append(extract_dir)
+                continue
 
-        # --- Распаковка ---
-        extract_dir = os.path.join(DOWNLOAD_DIR, version_str)
-        os.makedirs(extract_dir, exist_ok=True)
+            # скачиваем ZIP
+            with requests.get(zip_url, stream=True) as r:
+                r.raise_for_status()
+                with open(local_path, "wb") as f:
+                    for chunk in r.iter_content(chunk_size=8192):
+                        f.write(chunk)
 
-        with zipfile.ZipFile(local_path, 'r') as zip_ref:
-            zip_ref.extractall(extract_dir)
+            print(f"✅ Скачано: {local_path}")
 
-        print(f"📂 Архив распакован в: {extract_dir}")
+            # распаковываем
+            os.makedirs(extract_dir, exist_ok=True)
+            with zipfile.ZipFile(local_path, 'r') as zip_ref:
+                zip_ref.extractall(extract_dir)
 
-        os.remove(local_path)
-        print(f"🗑 Архив удалён: {local_path}")
+            print(f"📂 Распаковано в: {extract_dir}")
 
-        return extract_dir
+            # удаляем архив
+            os.remove(local_path)
+            print(f"🗑 Удалено: {local_path}")
+
+            saved_paths.append(extract_dir)
+
+        return saved_paths
 
     except Exception as e:
         print(f"❌ Ошибка: {e}")
-        return None
+        return []
