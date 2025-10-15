@@ -8,7 +8,7 @@ SERVER_URL = "https://tn.zitsky.com/flasher/eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9
 DOWNLOAD_DIR = "firmware"
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
-def download_last_three_firmwares():
+def download_latest_firmware():
     try:
         response = requests.get(SERVER_URL)
         response.raise_for_status()
