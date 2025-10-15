@@ -150,11 +150,22 @@ class FlashVariant(Screen):
         self.version_path = version_path  # путь к папке с выбранной версией прошивки
 
         # пока вручную список вариантов, позже можно динамически через os.listdir
-        self.menu_items = ["battery_sw", "battery_lr", "sw", "master_lr", "repeater_lr"]
+        #self.menu_items = ["battery_sw", "battery_lr", "sw", "master_lr", "repeater_lr"]
+        self.menu_items = self.firmware_list(version_path)
 
         self.scroll_offset = 0
         self.VISIBLE_LINES = 4
         self.y_start = 50
+
+    def firmware_list(self, path):
+        suffix = "_0x9000.bin"
+        files = [
+            f[:-len(suffix)]
+            for f in os.listdir(path)
+            if f.endswith(suffix) and os.path.isfile(os.path.join(path, f))
+        ]
+        return sorted(files)
+
 
     def handle_input(self):
         global current_screen
