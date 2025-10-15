@@ -4,7 +4,7 @@ import os
 import requests
 
 SERVER_URL = "https://tn.zitsky.com/flasher/eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE3NjA1MzY1ODQsIm5hbWUiOiJQYXZlbFBvcnRhdGl2ZSJ9.xaJabSB73QsJBhjHb4jQT2VHJXtQ8NXz3EQ3I0M2l7I/firmwares"
-DOWNLOAD_DIR = "firmwares_downloaded"
+DOWNLOAD_DIR = "firmware"
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
 def download_latest_firmware():
@@ -32,7 +32,7 @@ def download_latest_firmware():
         zip_url = latest["zip"]
         latest_version = latest["version"]
 
-        file_name = zip_url.split("/")[-1] + ".zip"
+        file_name = f"{latest_version}.zip"
         local_path = os.path.join(DOWNLOAD_DIR, file_name)
 
         with requests.get(zip_url, stream=True) as r:
