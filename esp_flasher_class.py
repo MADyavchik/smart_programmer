@@ -72,43 +72,41 @@ class ESPFlasher:
             return None
 
     # ===== Прошивка =====
-    def flash_firmware(self, firmware_name):
+    def flash_firmware(self, variant_file_path):
+        """
+        variant_file_path: полный путь к выбранному варианту, например:
+        /root/smart_programmer/firmware/2.0.47/battery_sw_a_0x9000.bin
+        """
+        version_folder = os.path.dirname(variant_file_path)  # /root/.../2.0.47
+        variant_name = os.path.basename(variant_file_path)   # battery_sw_a_0x9000.bin
+        base_name = variant_name.split("_0x9000")[0]        # battery_sw_a
 
-        firmware_path = os.path.join(self.flash_dir, firmware_name)
-        if not os.path.exists(firmware_path):
-            logging.error(f"❌ Папка с прошивкой не найдена: {firmware_path}")
+        if not os.path.exists(version_folder):
+            logging.error(f"❌ Папка с прошивкой не найдена: {version_folder}")
             return False
 
-        bootloader = self.catch_name(firmware_path, "_0x1000.bin")
-        firmware = self.catch_name(firmware_path, "_0x10000.bin")
-        partitions = self.catch_name(firmware_path, "_0x8000.bin")
-        ota = self.catch_name(firmware_path, "_0xe000.bin")
-        nvs = self.catch_name(firmware_path, "_0x9000.bin")
+        # Ищем файлы по суффиксам
+        bootloader = self.catch_name(version_folder, "_0x1000.bin")
+        firmware = self.catch_name(version_folder, "_0x10000.bin")
+        partitions = self.catch_name(version_folder, "_0x8000.bin")
+        ota = self.catch_name(version_folder, "_0xe000.bin")
+        nvs = self.catch_name(version_folder, f"{base_name}_0x9000.bin")  # <-- нужный файл NVS
 
-        for file in [bootloader, firmware, partitions, ota]:
-            if not os.path.exists(file):
+        for file in [bootloader, firmware, partitions, ota, nvs]:
+            if not file or not os.path.exists(file):
                 logging.error(f"❌ Файл не найден: {file}")
                 return False
 
+        # Дальше запускаем стандартный процесс прошивки
         try:
             logging.info("🔌 Входим в bootloader...")
             self.enter_bootloader(self.boot_pin, self.en_pin)
-
-
-            logging.info("Прожигаем фьюзы...")
-            subprocess.run([
-                "espefuse.py", "--chip", "esp32", "-p", self.port, "--do-not-confirm", "set_flash_voltage", "3.3V"
-            ], check=True)
-
 
             logging.info("🧹 Очистка флеша...")
             subprocess.run(
                 ["esptool.py", "--chip", "esp32", "-b", "460800", "-p", self.port, "erase_flash"],
                 check=True
             )
-
-            logging.info("🔌 Повторно входим в bootloader...")
-            self.enter_bootloader(self.boot_pin, self.en_pin)
 
             logging.info("📦 Прошивка...")
             flash_args = [
