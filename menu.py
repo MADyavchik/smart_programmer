@@ -104,15 +104,13 @@ class ListScreen(Screen):
         def _draw(surf):
             surf.fill((255, 255, 0))
 
-            # Берём только видимые элементы
             visible_items = self.menu_items[self.scroll_offset : self.scroll_offset + self.VISIBLE_LINES]
             num_visible = len(visible_items)
-
-            # Общая высота видимых элементов с учетом линии
             total_items_height = num_visible * self.line_height
 
-            # Вертикальный offset внутри блока (чтобы сверху и снизу было одинаково)
-            vertical_offset = max(0, (VISIBLE_HEIGHT - total_items_height) // 2)
+            # Вычисляем вертикальный отступ относительно всей поверхности с учётом draw_limited
+            offset_top = (HEIGHT - VISIBLE_HEIGHT) // 2
+            vertical_offset = offset_top + (VISIBLE_HEIGHT - total_items_height) // 2
 
             for i, item in enumerate(visible_items):
                 color = (255, 0, 0) if (self.scroll_offset + i) == self.selected else (0, 0, 0)
