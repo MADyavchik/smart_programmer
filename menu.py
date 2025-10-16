@@ -103,10 +103,17 @@ class ListScreen(Screen):
     def draw_list(self, surface):
         def _draw(surf):
             surf.fill((255, 255, 0))
+
+            # Высота блока видимых элементов
+            total_height = self.line_height * min(self.VISIBLE_LINES, len(self.menu_items))
+            # Смещение сверху, чтобы список был центрирован в видимой зоне
+            vertical_offset = (VISIBLE_HEIGHT - total_height) // 2
+
             visible_items = self.menu_items[self.scroll_offset : self.scroll_offset + self.VISIBLE_LINES]
             for i, item in enumerate(visible_items):
                 color = (255, 0, 0) if (self.scroll_offset + i) == self.selected else (0, 0, 0)
-                surf.blit(font.render(item, True, color), (40, self.y_start + i * self.line_height))
+                y = vertical_offset + i * self.line_height
+                surf.blit(font.render(item, True, color), (40, y))
 
         self.draw_limited(surface, _draw)
 
