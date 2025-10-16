@@ -170,10 +170,16 @@ class BurnMenu(ListScreen):
                 version_path = os.path.join(flasher.flash_dir, item)
                 if os.path.exists(version_path):
                     current_screen = FlashVariant(version_path)
+
         def go_back():
             global current_screen
             current_screen = MainMenu()
+
         self.handle_list_input(on_select=select, on_back=go_back)
+
+    def draw(self, surface):
+        # Просто рисуем спрайты списка
+        self.draw_list(surface)
 
 # --- Подменю Flash ---
 class FlashVariant(ListScreen):
