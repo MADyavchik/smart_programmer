@@ -186,7 +186,7 @@ class FlashVariant(ListScreen):
     def __init__(self, version_path):
         self.version_path = version_path
         items = self.firmware_list(version_path)
-        super().__init__(items)
+        super().__init__(items)  # теперь items уже известны
 
     def firmware_list(self, path):
         suffix = "_0x9000.bin"
@@ -205,6 +205,10 @@ class FlashVariant(ListScreen):
             global current_screen
             current_screen = BurnMenu()
         self.handle_list_input(on_select=select, on_back=go_back)
+
+    def draw(self, surface):
+        # Рисуем спрайты списка точно так же, как в BurnMenu
+        self.draw_list(surface)
 
 # --- Экран логов ---
 class LogsScreen(Screen):
