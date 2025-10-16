@@ -21,7 +21,7 @@ for pin in buttons.values():
 
 # --- Pygame / дисплей ---
 pygame.init()
-WIDTH, HEIGHT = 320, 240
+WIDTH, HEIGHT = 320, 170
 VISIBLE_HEIGHT = 170
 surface = pygame.Surface((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
@@ -61,7 +61,7 @@ class Screen:
         pass
 
 class ListScreen(Screen):
-    def __init__(self, items, y_start=30, line_spacing=8):
+    def __init__(self, items, y_start=50, line_spacing=8):
         super().__init__()
         self.menu_items = items
         self.y_start = y_start
