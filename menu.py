@@ -194,14 +194,24 @@ class FlashVariant(Screen):
     def handle_input(self):
         global current_screen
         if GPIO.input(buttons["up"]) == GPIO.LOW:
+            old = self.selected
             self.selected = (self.selected - 1) % len(self.menu_items)
-            if self.selected < self.scroll_offset:
+
+            # Если перепрыгнули с 0 на конец — сразу листаем вниз
+            if old == 0 and self.selected == len(self.menu_items) - 1:
+                self.scroll_offset = max(0, len(self.menu_items) - self.VISIBLE_LINES)
+            elif self.selected < self.scroll_offset:
                 self.scroll_offset = self.selected
             time.sleep(0.05)
 
         elif GPIO.input(buttons["down"]) == GPIO.LOW:
+            old = self.selected
             self.selected = (self.selected + 1) % len(self.menu_items)
-            if self.selected >= self.scroll_offset + self.VISIBLE_LINES:
+
+            # Если перепрыгнули с конца в начало — сразу листаем в начало
+            if old == len(self.menu_items) - 1 and self.selected == 0:
+                self.scroll_offset = 0
+            elif self.selected >= self.scroll_offset + self.VISIBLE_LINES:
                 self.scroll_offset = self.selected - self.VISIBLE_LINES + 1
             time.sleep(0.05)
 
