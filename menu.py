@@ -106,15 +106,16 @@ class ListScreen(Screen):
 
             # Высота блока видимых элементов
             total_height = self.line_height * min(self.VISIBLE_LINES, len(self.menu_items))
-            # Смещение сверху, чтобы список был центрирован в видимой зоне
-            vertical_offset = (VISIBLE_HEIGHT - total_height) // 2
+            # Смещение внутри видимой зоны (только вертикальный padding)
+            padding = (VISIBLE_HEIGHT - total_height) // 2
 
             visible_items = self.menu_items[self.scroll_offset : self.scroll_offset + self.VISIBLE_LINES]
             for i, item in enumerate(visible_items):
                 color = (255, 0, 0) if (self.scroll_offset + i) == self.selected else (0, 0, 0)
-                y = vertical_offset + i * self.line_height
+                y = padding + i * self.line_height  # только padding
                 surf.blit(font.render(item, True, color), (40, y))
 
+        # draw_limited уже сам смещает в центр экрана
         self.draw_limited(surface, _draw)
 
 # --- Главное меню ---
