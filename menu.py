@@ -22,6 +22,7 @@ for pin in buttons.values():
 # --- Pygame / дисплей ---
 pygame.init()
 WIDTH, HEIGHT = 320, 240
+VISIBLE_HEIGHT = 170   # фактический размер экрана по вертикали
 surface = pygame.Surface((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 font = pygame.font.Font(None, 22)
@@ -39,6 +40,15 @@ class Screen:
 
     def handle_input(self):
         pass
+
+    def draw_limited(self, surface, draw_fn):
+        """
+        Универсальный метод: всё, что рисует draw_fn,
+        не выходит за пределы VISIBLE_HEIGHT.
+        """
+        temp_surface = pygame.Surface(surface.get_size())
+        draw_fn(temp_surface)
+        surface.blit(temp_surface, (0, 0), area=pygame.Rect(0, 0, WIDTH, VISIBLE_HEIGHT))
 
     def draw(self, surface):
         pass
@@ -76,12 +86,15 @@ class MainMenu(Screen):
             time.sleep(0.2)
 
     def draw(self, surface):
-        surface.fill((255,255,0))
-        for i, (name, icon) in enumerate(self.icons):
-            x,y = self.positions[i]
-            surface.blit(icon,(x,y))
-            if i==self.selected:
-                pygame.draw.rect(surface,(0,0,0),(x-2,y-2,28,28),2)
+        def _draw(surf):
+            surf.fill((255,255,0))
+            for i, (name, icon) in enumerate(self.icons):
+                x, y = self.positions[i]
+                surf.blit(icon, (x, y))
+                if i == self.selected:
+                    pygame.draw.rect(surf, (0,0,0), (x-2,y-2,28,28), 2)
+
+        self.draw_limited(surface, _draw)
 
 # --- Подменю Burn ---
 class BurnMenu(Screen):
@@ -137,11 +150,14 @@ class BurnMenu(Screen):
                 time.sleep(0.05)
 
     def draw(self, surface):
-        surface.fill((255, 255, 0))
-        visible_items = self.menu_items[self.scroll_offset:self.scroll_offset + self.VISIBLE_LINES]
-        for i, item in enumerate(visible_items):
-            color = (255, 0, 0) if (self.scroll_offset + i) == self.selected else (0, 0, 0)
-            surface.blit(font.render(item, True, color), (40, self.y_start + i * 40))
+        def _draw(surf):
+            surf.fill((255, 255, 0))
+            visible_items = self.menu_items[self.scroll_offset:self.scroll_offset + self.VISIBLE_LINES]
+            for i, item in enumerate(visible_items):
+                color = (255, 0, 0) if (self.scroll_offset + i) == self.selected else (0, 0, 0)
+                surf.blit(font.render(item, True, color), (40, self.y_start + i * 40))
+
+        self.draw_limited(surface, _draw)
 
 # --- Подменю Flash ---
 class FlashVariant(Screen):
@@ -208,11 +224,14 @@ class FlashVariant(Screen):
                 time.sleep(0.05)
 
     def draw(self, surface):
-        surface.fill((255, 255, 0))
-        visible_items = self.menu_items[self.scroll_offset:self.scroll_offset + self.VISIBLE_LINES]
-        for i, item in enumerate(visible_items):
-            color = (255, 0, 0) if (self.scroll_offset + i) == self.selected else (0, 0, 0)
-            surface.blit(font.render(item, True, color), (40, self.y_start + i * 40))
+        def _draw(surf):
+            surf.fill((255, 255, 0))
+            visible_items = self.menu_items[self.scroll_offset:self.scroll_offset + self.VISIBLE_LINES]
+            for i, item in enumerate(visible_items):
+                color = (255, 0, 0) if (self.scroll_offset + i) == self.selected else (0, 0, 0)
+                surf.blit(font.render(item, True, color), (40, self.y_start + i * 40))
+
+        self.draw_limited(surface, _draw)
 
 
 # --- Экран логов ---
@@ -246,13 +265,15 @@ class LogsScreen(Screen):
             pass
 
     def draw(self, surface):
-        surface.fill((255,255,0))
-        visible_lines, line_height = self.log_manager.get_visible()
-        for i, (line_text, is_indent) in enumerate(visible_lines):
-            x_offset = 10 + (20 if is_indent else 0)
-            color = (255,0,0) if self.log_manager.is_alert_line(line_text) else (0,0,0)
-            surface.blit(font.render(line_text, True, color), (x_offset, self.y_start + i*line_height))
+        def _draw(surf):
+            surf.fill((255,255,0))
+            visible_lines, line_height = self.log_manager.get_visible()
+            for i, (line_text, is_indent) in enumerate(visible_lines):
+                x_offset = 10 + (20 if is_indent else 0)
+                color = (255,0,0) if self.log_manager.is_alert_line(line_text) else (0,0,0)
+                surf.blit(font.render(line_text, True, color), (x_offset, self.y_start + i*line_height))
 
+        self.draw_limited(surface, _draw)
 # --- Основной цикл ---
 current_screen = MainMenu()
 
