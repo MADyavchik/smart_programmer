@@ -25,7 +25,7 @@ WIDTH, HEIGHT = 320, 240
 VISIBLE_HEIGHT = 170
 surface = pygame.Surface((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
-font = pygame.font.Font(None, 22)
+font = pygame.font.Font(None, 24)
 
 serial = spi(port=0, device=0, gpio_DC=25, gpio_RST=16, bus_speed_hz=40000000)
 device = st7789(serial, width=WIDTH, height=HEIGHT, rotate=0)
@@ -104,7 +104,7 @@ class ListScreen(Screen):
         def _draw(surf):
             surf.fill((255, 255, 0))
 
-            visible_items = self.menu_items[self.scroll_offset : self.scroll_offset + self.VISIBLE_LINES] - 1
+            visible_items = self.menu_items[self.scroll_offset : self.scroll_offset + self.VISIBLE_LINES]
 
             for i, item in enumerate(visible_items):
                 color = (255, 0, 0) if (self.scroll_offset + i) == self.selected else (0, 0, 0)
