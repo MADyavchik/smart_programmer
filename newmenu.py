@@ -15,7 +15,8 @@ from log_reader import LogManager
 flasher = ESPFlasher(port="/dev/ttyS0", flash_dir="/root/smart_programmer/firmware")
 buttons = {"up":5,"down":19,"left":6,"right":26,"reset":13}
 GPIO.setmode(GPIO.BCM)
-for pin in buttons.values(): GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+for pin in buttons.values():
+    GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 pygame.init()
 WIDTH, HEIGHT = 320, 240
@@ -28,7 +29,6 @@ serial = spi(port=0, device=0, gpio_DC=25, gpio_RST=16, bus_speed_hz=40000000)
 device = st7789(serial, width=WIDTH, height=HEIGHT, rotate=0)
 log_manager = LogManager(font, max_width=300, max_height=170, line_spacing=4)
 
-# --- Data-driven меню ---
 # --- Функции действий ---
 def download_firmware():
     local = download_latest_firmware()
@@ -50,34 +50,17 @@ def open_burn_menu():
     global current_screen
     folders = sorted([f for f in os.listdir(flasher.flash_dir) if os.path.isdir(os.path.join(flasher.flash_dir,f))])
     items = {"Download": download_firmware}
-    # Для каждой папки создаём переход на FlashVariant
-    for folder in folders:
-        items[folder] = lambda folder=folder: open_flash_menu(folder)
-    current_screen = MenuScreen(items, "Burn Menu")
-# --- Структура меню ---
-MENU_STRUCTURE = {
-    "Main": {
-        "Burn": lambda: open_burn_menu(),
-        "Download Logs": lambda: open_logs(),
-        "Settings": None,
-        "Info": None
-    }
-}
-
-def open_burn_menu():
-    global current_screen
-    folders = sorted([f for f in os.listdir(flasher.flash_dir) if os.path.isdir(os.path.join(flasher.flash_dir,f))])
-    items = {"Download": download_firmware}
-    # Для каждой папки создаём переход на FlashVariant
     for folder in folders:
         items[folder] = lambda folder=folder: open_flash_menu(folder)
     current_screen = MenuScreen(items, "Burn Menu")
 
+# --- Меню Flash ---
 def open_flash_menu(folder):
     global current_screen
     version_path = os.path.join(flasher.flash_dir, folder)
     current_screen = MenuScreen(build_flash_actions(version_path), f"Flash {folder}")
 
+# --- Меню Logs ---
 def open_logs():
     global current_screen
     current_screen = LogScreenWrapper()
@@ -96,8 +79,10 @@ class MenuScreen:
 
     def handle_input(self):
         global current_screen
-        if GPIO.input(buttons["up"]) == GPIO.LOW: self.list_box.select_previous(); time.sleep(0.1)
-        elif GPIO.input(buttons["down"]) == GPIO.LOW: self.list_box.select_next(); time.sleep(0.1)
+        if GPIO.input(buttons["up"]) == GPIO.LOW:
+            self.list_box.select_previous(); time.sleep(0.1)
+        elif GPIO.input(buttons["down"]) == GPIO.LOW:
+            self.list_box.select_next(); time.sleep(0.1)
         elif GPIO.input(buttons["left"]) == GPIO.LOW:
             current_screen = main_menu if self.title != "Main" else self
             time.sleep(0.1)
@@ -106,16 +91,9 @@ class MenuScreen:
             if sel:
                 idx = self.items.index(sel)
                 action = self.actions[idx]
-                if action:
-                    action()  # <--- теперь вызываем без аргументов
-            while GPIO.input(buttons["reset"]) == GPIO.LOW: time.sleep(0.05)
-
-    def draw(self, surface):
-        surface.fill((255,255,0))
-        if self.title:
-            t_surf = font.render(self.title, True, (0,0,0))
-            surface.blit(t_surf, (WIDTH//2 - t_surf.get_width()//2, 5))
-        self.list_box.draw_ui(surface)
+                if action: action()  # вызываем без аргументов
+            while GPIO.input(buttons["reset"]) == GPIO.LOW:
+                time.sleep(0.05)
 
     def draw(self, surface):
         surface.fill((255,255,0))
@@ -129,14 +107,19 @@ class LogScreenWrapper(MenuScreen):
     def __init__(self):
         super().__init__({}, "Logs")
         self.y_start = 35
+
     def handle_input(self):
         global current_screen
         if GPIO.input(buttons["up"]) == GPIO.LOW: log_manager.scroll_up(); time.sleep(0.05)
         elif GPIO.input(buttons["down"]) == GPIO.LOW: log_manager.scroll_down(); time.sleep(0.05)
         elif GPIO.input(buttons["right"]) == GPIO.LOW: log_manager.scroll_to_end(); time.sleep(0.05)
         elif GPIO.input(buttons["left"]) == GPIO.LOW: current_screen = main_menu; time.sleep(0.2)
-        try: line = next(log_manager.generator); log_manager.add_line(line) if line else None
-        except StopIteration: pass
+        try:
+            line = next(log_manager.generator)
+            if line: log_manager.add_line(line)
+        except StopIteration:
+            pass
+
     def draw(self, surface):
         surface.fill((255,255,0))
         visible, lh = log_manager.get_visible()
@@ -146,7 +129,16 @@ class LogScreenWrapper(MenuScreen):
             surface.blit(font.render(text, True, color), (x, self.y_start + i*lh))
 
 # --- Стартовое меню ---
-main_menu = MenuScreen({k: v for k,v in MENU_STRUCTURE["Main"].items()}, "Main")
+MENU_STRUCTURE = {
+    "Main": {
+        "Burn": open_burn_menu,
+        "Download Logs": open_logs,
+        "Settings": None,
+        "Info": None
+    }
+}
+
+main_menu = MenuScreen({k:v for k,v in MENU_STRUCTURE["Main"].items()}, "Main")
 current_screen = main_menu
 
 # --- Основной цикл ---
