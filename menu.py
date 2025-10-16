@@ -163,9 +163,10 @@ class BurnMenu(ListScreen):
         super().__init__(["Download"] + folders)
 
     def handle_input(self):
-        global current_screen
+
 
         def select(item):
+            global current_screen
             if item == "Download":
                 local = download_latest_firmware()
                 if local:
