@@ -121,12 +121,11 @@ class LogScreenWrapper(MenuScreen):
             pass
 
     def draw(self, surface):
-        surface.fill((255,255,0))
-        visible, lh = log_manager.get_visible()
-        for i, (text, indent) in enumerate(visible):
-            x = 10 + (20 if indent else 0)
-            color = (255,0,0) if log_manager.is_alert_line(text) else (0,0,0)
-            surface.blit(font.render(text, True, color), (x, self.y_start + i*lh))
+        surface.fill((255, 255, 0))
+        if self.title:
+            t_surf = font.render(self.title, True, (0, 0, 0))
+            surface.blit(t_surf, (WIDTH // 2 - t_surf.get_width() // 2, 5))
+        # больше не вызываем self.list_box.draw_ui(surface)
 
 # --- Стартовое меню ---
 MENU_STRUCTURE = {
