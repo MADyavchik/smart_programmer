@@ -22,7 +22,7 @@ for pin in buttons.values():
 # --- Pygame / дисплей ---
 pygame.init()
 WIDTH, HEIGHT = 320, 240
-VISIBLE_HEIGHT = 170   # фактический размер экрана по вертикали
+VISIBLE_HEIGHT = 170
 surface = pygame.Surface((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 font = pygame.font.Font(None, 22)
@@ -49,7 +49,6 @@ class Screen:
         temp_surface = pygame.Surface(surface.get_size())
         draw_fn(temp_surface)
 
-        # вертикальное смещение
         offset_top = (HEIGHT - VISIBLE_HEIGHT) // 2
 
         surface.blit(
@@ -69,7 +68,6 @@ class ListScreen(Screen):
         self.selected = 0
         self.scroll_offset = 0
 
-        # Автоматический расчёт количества строк
         font_height = font.get_height()
         self.line_height = font_height + line_spacing
         self.VISIBLE_LINES = VISIBLE_HEIGHT // self.line_height
@@ -166,6 +164,7 @@ class BurnMenu(ListScreen):
 
     def handle_input(self):
         global current_screen
+
         def select(item):
             if item == "Download":
                 local = download_latest_firmware()
@@ -179,22 +178,13 @@ class BurnMenu(ListScreen):
                     current_screen = FlashVariant(version_path)
 
         def go_back():
+            global current_screen
             current_screen = MainMenu()
 
         self.handle_list_input(on_select=select, on_back=go_back)
 
     def draw(self, surface):
         self.draw_list(surface)
-
-    def draw(self, surface):
-        def _draw(surf):
-            surf.fill((255, 255, 0))
-            visible_items = self.menu_items[self.scroll_offset:self.scroll_offset + self.VISIBLE_LINES]
-            for i, item in enumerate(visible_items):
-                color = (255, 0, 0) if (self.scroll_offset + i) == self.selected else (0, 0, 0)
-                surf.blit(font.render(item, True, color), (40, self.y_start + i * 40))
-
-        self.draw_limited(surface, _draw)
 
 # --- Подменю Flash ---
 class FlashVariant(ListScreen):
@@ -226,23 +216,13 @@ class FlashVariant(ListScreen):
                 logging.error("❌ Нет файла")
 
         def go_back():
+            global current_screen
             current_screen = BurnMenu()
 
         self.handle_list_input(on_select=select, on_back=go_back)
 
     def draw(self, surface):
         self.draw_list(surface)
-
-    def draw(self, surface):
-        def _draw(surf):
-            surf.fill((255, 255, 0))
-            visible_items = self.menu_items[self.scroll_offset:self.scroll_offset + self.VISIBLE_LINES]
-            for i, item in enumerate(visible_items):
-                color = (255, 0, 0) if (self.scroll_offset + i) == self.selected else (0, 0, 0)
-                surf.blit(font.render(item, True, color), (40, self.y_start + i * 40))
-
-        self.draw_limited(surface, _draw)
-
 
 # --- Экран логов ---
 class LogsScreen(Screen):
@@ -253,7 +233,6 @@ class LogsScreen(Screen):
 
     def handle_input(self):
         global current_screen
-        # Прокрутка
         if GPIO.input(buttons["up"]) == GPIO.LOW:
             self.log_manager.scroll_up()
             time.sleep(0.05)
@@ -266,7 +245,6 @@ class LogsScreen(Screen):
         elif GPIO.input(buttons["left"]) == GPIO.LOW:
             current_screen = MainMenu()
             time.sleep(0.2)
-        # Добавляем новые строки из генератора
         try:
             line = next(self.log_manager.generator)
             if line:
@@ -284,6 +262,7 @@ class LogsScreen(Screen):
                 surf.blit(font.render(line_text, True, color), (x_offset, self.y_start + i*line_height))
 
         self.draw_limited(surface, _draw)
+
 # --- Основной цикл ---
 current_screen = MainMenu()
 
