@@ -29,7 +29,8 @@ device = st7789(serial, width=WIDTH, height=HEIGHT, rotate=0)
 log_manager = LogManager(font, max_width=300, max_height=170, line_spacing=4)
 
 # --- Data-driven меню ---
-def download_firmware(_=None):
+# --- Функции действий ---
+def download_firmware():
     local = download_latest_firmware()
     logging.info(f"Скачан: {local}" if local else "Ошибка скачивания")
 
@@ -42,8 +43,17 @@ def flash_file(path):
 
 def build_flash_actions(version_path):
     files = sorted([f[:-len("_0x9000.bin")] for f in os.listdir(version_path) if f.endswith("_0x9000.bin")])
-    return {f: lambda f=f: flash_file(os.path.join(version_path, f+"_0x9000.bin")) for f in files}
+    return {f: (lambda f=f: flash_file(os.path.join(version_path, f+"_0x9000.bin"))) for f in files}
 
+# --- Меню Burn ---
+def open_burn_menu():
+    global current_screen
+    folders = sorted([f for f in os.listdir(flasher.flash_dir) if os.path.isdir(os.path.join(flasher.flash_dir,f))])
+    items = {"Download": download_firmware}
+    # Для каждой папки создаём переход на FlashVariant
+    for folder in folders:
+        items[folder] = lambda folder=folder: open_flash_menu(folder)
+    current_screen = MenuScreen(items, "Burn Menu")
 # --- Структура меню ---
 MENU_STRUCTURE = {
     "Main": {
@@ -58,7 +68,9 @@ def open_burn_menu():
     global current_screen
     folders = sorted([f for f in os.listdir(flasher.flash_dir) if os.path.isdir(os.path.join(flasher.flash_dir,f))])
     items = {"Download": download_firmware}
-    items.update({f: lambda f=f: open_flash_menu(f) for f in folders})
+    # Для каждой папки создаём переход на FlashVariant
+    for folder in folders:
+        items[folder] = lambda folder=folder: open_flash_menu(folder)
     current_screen = MenuScreen(items, "Burn Menu")
 
 def open_flash_menu(folder):
@@ -94,8 +106,16 @@ class MenuScreen:
             if sel:
                 idx = self.items.index(sel)
                 action = self.actions[idx]
-                if action: action(sel)
+                if action:
+                    action()  # <--- теперь вызываем без аргументов
             while GPIO.input(buttons["reset"]) == GPIO.LOW: time.sleep(0.05)
+
+    def draw(self, surface):
+        surface.fill((255,255,0))
+        if self.title:
+            t_surf = font.render(self.title, True, (0,0,0))
+            surface.blit(t_surf, (WIDTH//2 - t_surf.get_width()//2, 5))
+        self.list_box.draw_ui(surface)
 
     def draw(self, surface):
         surface.fill((255,255,0))
