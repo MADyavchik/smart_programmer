@@ -108,9 +108,12 @@ class ListScreen(Screen):
         def _draw(surf):
             surf.fill((255, 255, 0))
             visible_items = self.menu_items[self.scroll_offset : self.scroll_offset + self.VISIBLE_LINES]
+
+            # y внутри видимой зоны
+            y_start_visible = self.vertical_padding
             for i, item in enumerate(visible_items):
                 color = (255, 0, 0) if (self.scroll_offset + i) == self.selected else (0, 0, 0)
-                y = self.y_start + i * self.line_height
+                y = y_start_visible + i * self.line_height
                 surf.blit(font.render(item, True, color), (40, y))
 
         self.draw_limited(surface, _draw)
