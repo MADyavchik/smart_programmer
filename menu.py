@@ -61,6 +61,57 @@ class Screen:
     def draw(self, surface):
         pass
 
+class ListScreen(Screen):
+    def __init__(self, items, y_start=50, line_spacing=8):
+        super().__init__()
+        self.menu_items = items
+        self.y_start = y_start
+        self.selected = 0
+        self.scroll_offset = 0
+
+        # Автоматический расчёт количества строк
+        font_height = font.get_height()
+        self.line_height = font_height + line_spacing
+        self.VISIBLE_LINES = VISIBLE_HEIGHT // self.line_height
+
+    def handle_list_input(self, on_select=None, on_back=None):
+        if GPIO.input(buttons["up"]) == GPIO.LOW:
+            old = self.selected
+            self.selected = (self.selected - 1) % len(self.menu_items)
+            if old == 0 and self.selected == len(self.menu_items) - 1:
+                self.scroll_offset = max(0, len(self.menu_items) - self.VISIBLE_LINES)
+            elif self.selected < self.scroll_offset:
+                self.scroll_offset = self.selected
+            time.sleep(0.1)
+
+        elif GPIO.input(buttons["down"]) == GPIO.LOW:
+            old = self.selected
+            self.selected = (self.selected + 1) % len(self.menu_items)
+            if old == len(self.menu_items) - 1 and self.selected == 0:
+                self.scroll_offset = 0
+            elif self.selected >= self.scroll_offset + self.VISIBLE_LINES:
+                self.scroll_offset = self.selected - self.VISIBLE_LINES + 1
+            time.sleep(0.1)
+
+        elif GPIO.input(buttons["left"]) == GPIO.LOW and on_back:
+            on_back()
+            time.sleep(0.1)
+
+        elif GPIO.input(buttons["reset"]) == GPIO.LOW and on_select:
+            on_select(self.menu_items[self.selected])
+            while GPIO.input(buttons["reset"]) == GPIO.LOW:
+                time.sleep(0.05)
+
+    def draw_list(self, surface):
+        def _draw(surf):
+            surf.fill((255, 255, 0))
+            visible_items = self.menu_items[self.scroll_offset : self.scroll_offset + self.VISIBLE_LINES]
+            for i, item in enumerate(visible_items):
+                color = (255, 0, 0) if (self.scroll_offset + i) == self.selected else (0, 0, 0)
+                surf.blit(font.render(item, True, color), (40, self.y_start + i * self.line_height))
+
+        self.draw_limited(surface, _draw)
+
 # --- Главное меню ---
 class MainMenu(Screen):
     def __init__(self):
@@ -105,57 +156,35 @@ class MainMenu(Screen):
         self.draw_limited(surface, _draw)
 
 # --- Подменю Burn ---
-class BurnMenu(Screen):
+class BurnMenu(ListScreen):
     def __init__(self):
-        super().__init__()
         base_path = "/root/smart_programmer/firmware"
-        # список папок с версиями прошивок
-        self.folders = [f for f in os.listdir(base_path) if os.path.isdir(os.path.join(base_path, f))]
-        self.folders.sort()
-        self.menu_items = ["Download"] + self.folders
-        self.scroll_offset = 0
-        self.VISIBLE_LINES = 4
-        self.y_start = 50
+        folders = [f for f in os.listdir(base_path)
+                   if os.path.isdir(os.path.join(base_path, f))]
+        folders.sort()
+        super().__init__(["Download"] + folders)
 
     def handle_input(self):
         global current_screen
-        if GPIO.input(buttons["up"]) == GPIO.LOW:
-            self.selected = (self.selected - 1) % len(self.menu_items)
-            if self.selected < self.scroll_offset:
-                self.scroll_offset = self.selected
-            time.sleep(0.05)
-
-        elif GPIO.input(buttons["down"]) == GPIO.LOW:
-            self.selected = (self.selected + 1) % len(self.menu_items)
-            if self.selected >= self.scroll_offset + self.VISIBLE_LINES:
-                self.scroll_offset = self.selected - self.VISIBLE_LINES + 1
-            time.sleep(0.05)
-
-        elif GPIO.input(buttons["left"]) == GPIO.LOW:
-            current_screen = MainMenu()
-            time.sleep(0.05)
-
-        elif GPIO.input(buttons["reset"]) == GPIO.LOW:
-            chosen_item = self.menu_items[self.selected]
-            logging.info(f"Выбран пункт: {chosen_item}")
-
-            if chosen_item == "Download":
-                local_file = download_latest_firmware()
-                if local_file:
-                    logging.info(f"Файл скачан: {local_file}")
+        def select(item):
+            if item == "Download":
+                local = download_latest_firmware()
+                if local:
+                    logging.info(f"Скачан: {local}")
                 else:
-                    logging.error("Скачивание не удалось")
+                    logging.error("Ошибка скачивания")
             else:
-                # Переход на экран выбора варианта прошивки
-                firmware_version_path = os.path.join(flasher.flash_dir, chosen_item)
-                if os.path.exists(firmware_version_path):
-                    current_screen = FlashVariant(firmware_version_path)
-                else:
-                    logging.error(f"Папка с прошивкой не найдена: {firmware_version_path}")
+                version_path = os.path.join(flasher.flash_dir, item)
+                if os.path.exists(version_path):
+                    current_screen = FlashVariant(version_path)
 
-            # Ждём отпускания кнопки
-            while GPIO.input(buttons["reset"]) == GPIO.LOW:
-                time.sleep(0.05)
+        def go_back():
+            current_screen = MainMenu()
+
+        self.handle_list_input(on_select=select, on_back=go_back)
+
+    def draw(self, surface):
+        self.draw_list(surface)
 
     def draw(self, surface):
         def _draw(surf):
@@ -168,78 +197,41 @@ class BurnMenu(Screen):
         self.draw_limited(surface, _draw)
 
 # --- Подменю Flash ---
-class FlashVariant(Screen):
+class FlashVariant(ListScreen):
     def __init__(self, version_path):
-        super().__init__()
-        self.version_path = version_path  # путь к папке с выбранной версией прошивки
-
-        # пока вручную список вариантов, позже можно динамически через os.listdir
-        #self.menu_items = ["battery_sw", "battery_lr", "sw", "master_lr", "repeater_lr"]
-        self.menu_items = self.firmware_list(version_path)
-
-        self.scroll_offset = 0
-        self.VISIBLE_LINES = 4
-        self.y_start = 50
+        self.version_path = version_path
+        items = self.firmware_list(version_path)
+        super().__init__(items)
 
     def firmware_list(self, path):
         suffix = "_0x9000.bin"
-        files = [
+        return sorted([
             f[:-len(suffix)]
             for f in os.listdir(path)
-            if f.endswith(suffix) and os.path.isfile(os.path.join(path, f))
-        ]
-        return sorted(files)
-
+            if f.endswith(suffix)
+        ])
 
     def handle_input(self):
         global current_screen
-        if GPIO.input(buttons["up"]) == GPIO.LOW:
-            old = self.selected
-            self.selected = (self.selected - 1) % len(self.menu_items)
 
-            # Если перепрыгнули с 0 на конец — сразу листаем вниз
-            if old == 0 and self.selected == len(self.menu_items) - 1:
-                self.scroll_offset = max(0, len(self.menu_items) - self.VISIBLE_LINES)
-            elif self.selected < self.scroll_offset:
-                self.scroll_offset = self.selected
-            time.sleep(0.05)
-
-        elif GPIO.input(buttons["down"]) == GPIO.LOW:
-            old = self.selected
-            self.selected = (self.selected + 1) % len(self.menu_items)
-
-            # Если перепрыгнули с конца в начало — сразу листаем в начало
-            if old == len(self.menu_items) - 1 and self.selected == 0:
-                self.scroll_offset = 0
-            elif self.selected >= self.scroll_offset + self.VISIBLE_LINES:
-                self.scroll_offset = self.selected - self.VISIBLE_LINES + 1
-            time.sleep(0.05)
-
-        elif GPIO.input(buttons["left"]) == GPIO.LOW:
-            # возвращаемся к меню версий
-            current_screen = BurnMenu()
-            time.sleep(0.05)
-
-        elif GPIO.input(buttons["reset"]) == GPIO.LOW:
-            chosen_item = self.menu_items[self.selected]
-            logging.info(f"Выбран вариант прошивки: {chosen_item}")
-
-            # формируем полный путь к бинарнику
-            firmware_file = os.path.join(self.version_path, f"{chosen_item}_0x9000.bin")
-            logging.info(f"Путь к файлу: {firmware_file}")
-
+        def select(item):
+            firmware_file = os.path.join(self.version_path, f"{item}_0x9000.bin")
             if os.path.exists(firmware_file):
                 result = flasher.flash_firmware(firmware_file)
                 if result:
-                    logging.info("✅ Прошивка завершена успешно!")
+                    logging.info("✅ Успех")
                 else:
-                    logging.error("❌ Прошивка завершилась с ошибкой")
+                    logging.error("❌ Ошибка")
             else:
-                logging.error(f"❌ Файл прошивки не найден: {firmware_file}")
+                logging.error("❌ Нет файла")
 
-            # ждём отпускания кнопки
-            while GPIO.input(buttons["reset"]) == GPIO.LOW:
-                time.sleep(0.05)
+        def go_back():
+            current_screen = BurnMenu()
+
+        self.handle_list_input(on_select=select, on_back=go_back)
+
+    def draw(self, surface):
+        self.draw_list(surface)
 
     def draw(self, surface):
         def _draw(surf):
