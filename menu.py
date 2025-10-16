@@ -61,37 +61,33 @@ class Screen:
         pass
 
 class ListScreen(Screen):
-    def __init__(self, items, vertical_padding=8, line_spacing=4):
+    def __init__(self, items, y_start=50, line_spacing=8):
         super().__init__()
         self.menu_items = items
+        self.y_start = y_start
         self.selected = 0
         self.scroll_offset = 0
 
-        # Высота шрифта и строки
         font_height = font.get_height()
         self.line_height = font_height + line_spacing
-
-        # Отступ сверху и снизу в видимой зоне
-        self.vertical_padding = vertical_padding
-
-        # Количество видимых строк автоматически
-        self.VISIBLE_LINES = max(1, (VISIBLE_HEIGHT - 2 * self.vertical_padding) // self.line_height)
-
-        # y старт первой строки
-        self.y_start = self.vertical_padding
+        self.VISIBLE_LINES = VISIBLE_HEIGHT // self.line_height
 
     def handle_list_input(self, on_select=None, on_back=None):
         if GPIO.input(buttons["up"]) == GPIO.LOW:
             old = self.selected
             self.selected = (self.selected - 1) % len(self.menu_items)
-            if self.selected < self.scroll_offset:
+            if old == 0 and self.selected == len(self.menu_items) - 1:
+                self.scroll_offset = max(0, len(self.menu_items) - self.VISIBLE_LINES)
+            elif self.selected < self.scroll_offset:
                 self.scroll_offset = self.selected
             time.sleep(0.1)
 
         elif GPIO.input(buttons["down"]) == GPIO.LOW:
             old = self.selected
             self.selected = (self.selected + 1) % len(self.menu_items)
-            if self.selected >= self.scroll_offset + self.VISIBLE_LINES:
+            if old == len(self.menu_items) - 1 and self.selected == 0:
+                self.scroll_offset = 0
+            elif self.selected >= self.scroll_offset + self.VISIBLE_LINES:
                 self.scroll_offset = self.selected - self.VISIBLE_LINES + 1
             time.sleep(0.1)
 
@@ -108,12 +104,9 @@ class ListScreen(Screen):
         def _draw(surf):
             surf.fill((255, 255, 0))
             visible_items = self.menu_items[self.scroll_offset : self.scroll_offset + self.VISIBLE_LINES]
-
-            # y внутри видимой зоны
-            y_start_visible = self.vertical_padding
             for i, item in enumerate(visible_items):
                 color = (255, 0, 0) if (self.scroll_offset + i) == self.selected else (0, 0, 0)
-                y = y_start_visible + i * self.line_height
+                y = self.y_start + i * self.line_height
                 surf.blit(font.render(item, True, color), (40, y))
 
         self.draw_limited(surface, _draw)
