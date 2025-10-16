@@ -21,11 +21,11 @@ for pin in buttons.values():
 
 # --- Pygame / дисплей ---
 pygame.init()
-WIDTH, HEIGHT = 320, 170
+WIDTH, HEIGHT = 320, 240
 VISIBLE_HEIGHT = 170
 surface = pygame.Surface((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
-font = pygame.font.Font(None, 24)
+font = pygame.font.Font(None, 22)
 
 serial = spi(port=0, device=0, gpio_DC=25, gpio_RST=16, bus_speed_hz=40000000)
 device = st7789(serial, width=WIDTH, height=HEIGHT, rotate=0)
