@@ -108,7 +108,7 @@ class ListScreen(Screen):
 
             for i, item in enumerate(visible_items):
                 color = (255, 0, 0) if (self.scroll_offset + i) == self.selected else (0, 0, 0)
-                y = self.y_start + i * self.line_height  # просто отступ сверху self.y_start
+                y = self.y_start + i * self.line_height
                 surf.blit(font.render(item, True, color), (40, y))
 
         self.draw_limited(surface, _draw)
