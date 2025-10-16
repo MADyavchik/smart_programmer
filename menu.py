@@ -104,20 +104,13 @@ class ListScreen(Screen):
         def _draw(surf):
             surf.fill((255, 255, 0))
 
-            # Высота блока видимых элементов
-            total_height = self.line_height * min(self.VISIBLE_LINES, len(self.menu_items))
-            # Смещение внутри видимой зоны (только вертикальный padding)
-            padding = (VISIBLE_HEIGHT - total_height) // 2
-
             visible_items = self.menu_items[self.scroll_offset : self.scroll_offset + self.VISIBLE_LINES]
             for i, item in enumerate(visible_items):
                 color = (255, 0, 0) if (self.scroll_offset + i) == self.selected else (0, 0, 0)
-                y = padding + i * self.line_height  # только padding
+                y = self.y_start + i * self.line_height  # используем y_start как отступ сверху
                 surf.blit(font.render(item, True, color), (40, y))
 
-        # draw_limited уже сам смещает в центр экрана
         self.draw_limited(surface, _draw)
-
 # --- Главное меню ---
 class MainMenu(Screen):
     def __init__(self):
