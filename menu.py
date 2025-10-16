@@ -43,12 +43,20 @@ class Screen:
 
     def draw_limited(self, surface, draw_fn):
         """
-        Универсальный метод: всё, что рисует draw_fn,
-        не выходит за пределы VISIBLE_HEIGHT.
+        Рисуем только в центральной зоне:
+        сверху и снизу по 35 пикселей остаётся пусто.
         """
         temp_surface = pygame.Surface(surface.get_size())
         draw_fn(temp_surface)
-        surface.blit(temp_surface, (0, 0), area=pygame.Rect(0, 0, WIDTH, VISIBLE_HEIGHT))
+
+        # вертикальное смещение
+        offset_top = (HEIGHT - VISIBLE_HEIGHT) // 2
+
+        surface.blit(
+            temp_surface,
+            (0, offset_top),
+            area=pygame.Rect(0, offset_top, WIDTH, VISIBLE_HEIGHT)
+        )
 
     def draw(self, surface):
         pass
