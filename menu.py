@@ -104,7 +104,7 @@ class ListScreen(Screen):
         def _draw(surf):
             surf.fill((255, 255, 0))
 
-            visible_items = self.menu_items[self.scroll_offset : self.scroll_offset + self.VISIBLE_LINES]
+            visible_items = self.menu_items[self.scroll_offset : self.scroll_offset + self.VISIBLE_LINES] - 1
 
             for i, item in enumerate(visible_items):
                 color = (255, 0, 0) if (self.scroll_offset + i) == self.selected else (0, 0, 0)
