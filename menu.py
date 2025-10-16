@@ -105,16 +105,10 @@ class ListScreen(Screen):
             surf.fill((255, 255, 0))
 
             visible_items = self.menu_items[self.scroll_offset : self.scroll_offset + self.VISIBLE_LINES]
-            num_visible = len(visible_items)
-            total_items_height = num_visible * self.line_height
-
-            # Вычисляем вертикальный отступ относительно всей поверхности с учётом draw_limited
-            offset_top = (HEIGHT - VISIBLE_HEIGHT) // 2
-            vertical_offset = offset_top + (VISIBLE_HEIGHT - total_items_height) // 2
 
             for i, item in enumerate(visible_items):
                 color = (255, 0, 0) if (self.scroll_offset + i) == self.selected else (0, 0, 0)
-                y = vertical_offset + i * self.line_height
+                y = self.y_start + i * self.line_height  # просто отступ сверху self.y_start
                 surf.blit(font.render(item, True, color), (40, y))
 
         self.draw_limited(surface, _draw)
