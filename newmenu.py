@@ -83,7 +83,7 @@ class MenuScreen:
         self.title = title
         # Инициализируем выбор на первом элементе
         if self.items:
-            self.list_box.set_item_selection(self.items[0], True)
+            self.list_box.select_item(self.items[0])  # <-- исправлено
 
     def handle_input(self):
         global current_screen
@@ -94,12 +94,12 @@ class MenuScreen:
         if GPIO.input(buttons["up"]) == GPIO.LOW:
             idx = (idx - 1) % len(self.items)
             self.list_box.clear_selection()
-            self.list_box.set_item_selection(self.items[idx], True)
+            self.list_box.select_item(self.items[idx])  # <-- исправлено
             time.sleep(0.1)
         elif GPIO.input(buttons["down"]) == GPIO.LOW:
             idx = (idx + 1) % len(self.items)
             self.list_box.clear_selection()
-            self.list_box.set_item_selection(self.items[idx], True)
+            self.list_box.select_item(self.items[idx])  # <-- исправлено
             time.sleep(0.1)
         elif GPIO.input(buttons["left"]) == GPIO.LOW:
             current_screen = main_menu if self.title != "Main" else self
