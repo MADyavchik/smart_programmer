@@ -129,7 +129,7 @@ class ESPFlasher:
             if on_progress: on_progress(15)
 
             flash_args = [
-                "esptool.py", "--chip", "esp32", "-b", "460800", "-p", self.port,
+                "esptool.py", "-u", "--chip", "esp32", "-b", "460800", "-p", self.port,
                 "write_flash", "--flash_mode", "dio", "--flash_freq", "40m", "--flash_size", "4MB",
                 "0x1000", bootloader,
                 "0x10000", firmware,
@@ -141,10 +141,18 @@ class ESPFlasher:
             start_percent = 15    # начало этапа Flash Firmware на общей шкале
             stage_range = 85      # сколько процентов занимает этап
 
-            proc = subprocess.Popen(flash_args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+            #proc = subprocess.Popen(flash_args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+            proc = subprocess.Popen(
+                flash_args,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,   # или universal_newlines=True, но text=True предпочтительнее
+                bufsize=1    # line-buffered
+            )
 
             for line in proc.stdout:
                 line = line.strip()
+                print(line)
                 # ловим проценты из строки esptool
                 m = re.search(r"\[\=+\s*\>\s*\]*\s+(\d+\.\d+)%", line)
                 if m and on_progress:
