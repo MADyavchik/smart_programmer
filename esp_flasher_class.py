@@ -72,7 +72,7 @@ class ESPFlasher:
             return None
 
     # ===== Прошивка =====
-    def flash_firmware(self, variant_file_path):
+    def flash_firmware(self, variant_file_path, on_stage=None, on_progress=None):
         """
         variant_file_path: полный путь к выбранному варианту, например:
         /root/smart_programmer/firmware/2.0.47/battery_sw_a_0x9000.bin
@@ -99,21 +99,30 @@ class ESPFlasher:
 
         try:
             logging.info("🔌 Входим в bootloader...")
+
             self.enter_bootloader(self.boot_pin, self.en_pin)
+            if on_stage: on_stage("Enter Bootloader")
+            if on_progress: on_progress(0)
 
             logging.info("🔌 Прожигаем фьюзы...")
             subprocess.run([
                 "espefuse.py", "--chip", "esp32", "-p", self.port, "--do-not-confirm", "set_flash_voltage", "3.3V"
             ], check=True)
+            if on_stage: on_stage("Burn fuses")
+            if on_progress: on_progress(5)
 
             logging.info("🧹 Очистка флеша...")
             subprocess.run(
                 ["esptool.py", "--chip", "esp32", "-b", "460800", "-p", self.port, "erase_flash"],
                 check=True
             )
+            if on_stage: on_stage("Erase Flash")
+            if on_progress: on_progress(10)
 
             logging.info("🔌 Повторно входим в bootloader...")
             self.enter_bootloader(self.boot_pin, self.en_pin)
+            if on_stage: on_stage("Enter Bootloader Again")
+            if on_progress: on_progress(15)
 
             logging.info("📦 Прошивка...")
             flash_args = [
@@ -128,6 +137,8 @@ class ESPFlasher:
 
             subprocess.run(flash_args, check=True)
             logging.info("✅ Прошивка завершена")
+            if on_stage: on_stage("Done")
+            if on_progress: on_progress(100)
 
             self.exit_bootloader(self.boot_pin, self.en_pin)
             return True

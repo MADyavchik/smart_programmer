@@ -206,15 +206,38 @@ class FlashVariant(ListScreen):
         global current_screen
 
         def select(item):
+            global current_screen
             firmware_file = os.path.join(self.version_path, f"{item}_0x9000.bin")
-            if os.path.exists(firmware_file):
-                result = flasher.flash_firmware(firmware_file)
-                if result:
-                    logging.info("✅ Успех")
-                else:
-                    logging.error("❌ Ошибка")
-            else:
+            if not os.path.exists(firmware_file):
                 logging.error("❌ Нет файла")
+                return
+
+            # Создаём экран статуса
+            version = os.path.basename(self.version_path)
+            status_screen = FlashStatusScreen(item, version)
+            current_screen = status_screen
+
+            # Колбэк по процентам
+            def on_progress(p):
+                status_screen.update_progress(p)
+
+            # Колбэк по этапам
+            def on_stage(txt):
+                status_screen.update_stage(txt)
+
+            # Запуск прошивки в отдельном потоке (чтобы UI не вис)
+            import threading
+            def flash_thread():
+                flasher.flash_firmware(
+                    firmware_file,
+                    on_progress=on_progress,
+                    on_stage=on_stage
+                )
+                # По завершении можно вернуть в меню или оставить экран
+                # current_screen = MainMenu()
+
+            t = threading.Thread(target=flash_thread)
+            t.start()
 
         def go_back():
             global current_screen
@@ -224,6 +247,52 @@ class FlashVariant(ListScreen):
 
     def draw(self, surface):
         self.draw_list(surface)
+
+# --- Экран статуса прошивки ---
+class FlashStatusScreen(Screen):
+    def __init__(self, firmware_name, version):
+        super().__init__()
+        self.firmware_name = firmware_name
+        self.version = version
+        self.progress = 0              # 0-100
+        self.stage_text = "Подготовка..."
+
+    def update_progress(self, value):
+        self.progress = max(0, min(100, value))
+
+    def update_stage(self, text):
+        self.stage_text = text
+
+    def handle_input(self):
+        # Жмёшь "назад" - отмена/выход
+        global current_screen
+        if GPIO.input(buttons["left"]) == GPIO.LOW:
+            current_screen = MainMenu()
+            time.sleep(0.15)
+
+    def draw(self, surface):
+        def _draw(surf):
+            surf.fill((255,255,0))
+
+            # Верхняя строка — версия и имя
+            title = f"{self.version} / {self.firmware_name}"
+            text_surf = font.render(title, True, (0,0,0))
+            surf.blit(text_surf, (10, 40))
+
+            # Прогресс бар (по центру)
+            bar_width = 220
+            bar_height = 20
+            x = (WIDTH - bar_width) // 2
+            y = 100
+            pygame.draw.rect(surf, (0,0,0), (x, y, bar_width, bar_height), 2)
+            fill_width = int(bar_width * (self.progress / 100.0))
+            pygame.draw.rect(surf, (0,0,0), (x, y, fill_width, bar_height))
+
+            # Нижняя строка — текущий этап
+            stage_surf = font.render(self.stage_text, True, (0,0,0))
+            surf.blit(stage_surf, (10, 140))
+
+        self.draw_limited(surface, _draw)
 
 # --- Экран логов ---
 class LogsScreen(Screen):
