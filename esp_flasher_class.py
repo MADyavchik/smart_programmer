@@ -112,19 +112,22 @@ class ESPFlasher:
             if on_progress: on_progress(5)
 
             logging.info("🧹 Очистка флеша...")
+            if on_stage: on_stage("Erase Flash")
+            if on_progress: on_progress(10)
             subprocess.run(
                 ["esptool.py", "--chip", "esp32", "-b", "460800", "-p", self.port, "erase_flash"],
                 check=True
             )
-            if on_stage: on_stage("Erase Flash")
-            if on_progress: on_progress(10)
+
 
             logging.info("🔌 Повторно входим в bootloader...")
             self.enter_bootloader(self.boot_pin, self.en_pin)
-            if on_stage: on_stage("Enter Bootloader Again")
-            if on_progress: on_progress(15)
+
 
             logging.info("📦 Прошивка...")
+            if on_stage: on_stage("Flash...")
+            if on_progress: on_progress(15)
+
             flash_args = [
                 "esptool.py", "--chip", "esp32", "-b", "460800", "-p", self.port,
                 "write_flash", "--flash_mode", "dio", "--flash_freq", "40m", "--flash_size", "4MB",
@@ -135,7 +138,22 @@ class ESPFlasher:
                 "0x9000", nvs
             ]
 
-            subprocess.run(flash_args, check=True)
+            start_percent = 15    # начало этапа Flash Firmware на общей шкале
+            stage_range = 85      # сколько процентов занимает этап
+
+            proc = subprocess.Popen(flash_args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+
+            for line in proc.stdout:
+                line = line.strip()
+                # ловим проценты из строки esptool
+                m = re.search(r"\[\=+\s*\>\s*\]*\s+(\d+\.\d+)%", line)
+                if m and on_progress:
+                    firmware_percent = float(m.group(1))
+                    total_percent = start_percent + firmware_percent / 100 * stage_range
+                    on_progress(total_percent)
+
+            proc.wait()
+
             logging.info("✅ Прошивка завершена")
             if on_stage: on_stage("Done")
             if on_progress: on_progress(100)
