@@ -129,7 +129,7 @@ class ESPFlasher:
             if on_progress: on_progress(15)
 
             flash_args = [
-                "esptool.py", "-u", "--chip", "esp32", "-b", "460800", "-p", self.port,
+                "python3", "-u", "esptool.py", "--chip", "esp32", "-b", "460800", "-p", self.port,
                 "write_flash", "--flash_mode", "dio", "--flash_freq", "40m", "--flash_size", "4MB",
                 "0x1000", bootloader,
                 "0x10000", firmware,
