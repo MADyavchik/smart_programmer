@@ -157,12 +157,13 @@ class ESPFlasher:
             proc.wait()
 
             logging.info("✅ Прошивка завершена")
+            if on_stage: on_stage("Done")
+            if on_progress: on_progress(100)
 
 
             self.exit_bootloader(self.boot_pin, self.en_pin)
             return True
-            if on_stage: on_stage("Done")
-            if on_progress: on_progress(100)
+
 
         except subprocess.CalledProcessError as e:
             logging.error(f"❌ Ошибка прошивки: {e}")
