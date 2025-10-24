@@ -244,8 +244,8 @@ def wifi_text():
     ssid = wifi.get_ssid()
     rssi = wifi.get_signal_level()
     if ssid is None or rssi is None:
-        return "📶 WiFi: нет соединения"
-    return f"📶 {ssid} ({rssi} dBm)"
+        return "WiFi: нет соединения"
+    return f"{ssid} ({rssi} dBm)"
 
 # ---------- Создание плиток главного меню ----------
 tiles = [
