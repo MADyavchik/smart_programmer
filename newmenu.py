@@ -169,14 +169,25 @@ def battery_text():
     return f"{percent}%"
 
 def battery_color(selected=False):
-    """Меняет цвет плитки в зависимости от зарядки"""
+    """Меняет цвет плитки в зависимости от зарядки и процента батареи"""
     charging = batt.is_charging()
+    voltage = batt.get_voltage()
+    # пересчёт в проценты
+    percent = int((max(2.8, min(4.0, voltage)) - 2.8) / (4.0 - 2.8) * 100)
+
     if charging:
-        # зелёный при зарядке
-        return (0, 200, 0) if not selected else (0, 255, 0)
+        # голубой при зарядке
+        color = (0, 180, 255)
+        highlight = (0, 220, 255)
     else:
-        # красный при разрядке
-        return (180, 50, 50) if not selected else (255, 80, 80)
+        if percent <= 20:
+            color = (180, 50, 50)  # красный
+            highlight = (255, 80, 80)
+        else:
+            color = (0, 200, 0)    # зелёный
+            highlight = (0, 255, 0)
+
+    return highlight if selected else color
 
 # загрузка иконок
 def load_icon(filename, size=(32, 32)):
