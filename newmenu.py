@@ -125,10 +125,12 @@ class TileScreen:
 
         # выводим название выделенной плитки
         current_tile = self.tiles[self.selected]
-        if current_tile.label:
+        # если есть динамическая функция, используем её для футера
+        if getattr(current_tile, "dynamic_label_func", None):
+            footer_text = current_tile.dynamic_label_func()
+        elif current_tile.label:
             footer_text = current_tile.label
-        elif current_tile.icon:  # если плитка с иконкой, можно задать отдельное имя
-            # например, можно хранить name в Tile
+        elif current_tile.icon:
             footer_text = getattr(current_tile, "name", "Icon")
         else:
             footer_text = ""
@@ -212,6 +214,7 @@ LOG_icon = load_icon("log_ico.png")
 SET_icon = load_icon("settings_ico.png")
 FLASH_icon = load_icon("flash_ico.png")
 READMAC_icon = load_icon("readmac_ico.png")
+BATT_icon = load_icon("batt_ico.png")
 
 # ---------- Создание плиток главного меню ----------
 tiles = [
@@ -222,7 +225,7 @@ tiles = [
     Tile(icon=REB_icon, callback=stub_action("REBOOT"), name="Перезагрузка"),
     Tile(icon=READMAC_icon, callback=stub_action("READ MAC"), name="Считать MAC"),
     Tile(icon=SET_icon, callback=stub_action("SET"), name="Настройки"),
-    Tile(dynamic_label_func=battery_text, dynamic_color_func=battery_color, callback=stub_action("BATT"), name="Инф. о питании")
+    Tile(icon=BATT_icon, dynamic_color_func=battery_color, callback=stub_action("BATT"), dynamic_label_func=battery_text)
 ]
 
 menu = TileScreen(tiles)
