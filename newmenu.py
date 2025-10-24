@@ -41,11 +41,11 @@ AVAILABLE_H = VISIBLE_H - FOOTER_H - (ROWS + 1) * PADDING
 TILE_W = (SCREEN_W - (COLS + 1) * PADDING) // COLS
 TILE_H = AVAILABLE_H // ROWS
 
-BG_COLOR = (30, 30, 30)
+BG_COLOR = (0, 0, 0)
 TILE_COLOR = (180, 140, 0)      # тёмно-жёлтый
 SELECTED_COLOR = (255, 220, 0)  # ярко-жёлтый
-TEXT_COLOR = (0, 0, 0)
-FOOTER_COLOR = (180, 140, 0)
+TEXT_COLOR = (255, 255, 255)
+FOOTER_COLOR = (0, 0, 0)
 
 pygame.init()
 pygame.display.set_mode((1, 1))
@@ -140,7 +140,7 @@ class TileScreen:
         else:
             footer_text = ""
 
-        hint_surf = footer_font.render(footer_text, True, (180, 180, 180))
+        hint_surf = footer_font.render(footer_text, True, (255, 255, 255))
         hint_rect = hint_surf.get_rect(center=footer_rect.center)
         surf_full.blit(hint_surf, hint_rect)
 
