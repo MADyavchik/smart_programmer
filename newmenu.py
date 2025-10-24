@@ -28,10 +28,12 @@ COLS, ROWS = 4, 2
 PADDING = 4
 FOOTER_H = 20
 
- # рассчитываем доступную высоту под плитки
-TILE_H_AVAILABLE = SCREEN_H - FOOTER_H - (ROWS + 1) * PADDING
-TILE_H = TILE_H_AVAILABLE // ROWS
+# сначала считаем ширину плитки (фиксировано по ширине экрана)
 TILE_W = (SCREEN_W - (COLS + 1) * PADDING) // COLS
+
+# доступная высота под плитки = высота экрана - футер - отступы
+AVAILABLE_H = SCREEN_H - FOOTER_H - (ROWS + 1) * PADDING
+TILE_H = AVAILABLE_H // ROWS
 
 BG_COLOR = (30, 30, 30)
 TILE_COLOR = (60, 60, 60)
@@ -87,6 +89,8 @@ class TileScreen:
         hint_surf = footer_font.render(hint, True, (180, 180, 180))
         hint_rect = hint_surf.get_rect(center=footer_rect.center)
         surf_full.blit(hint_surf, hint_rect)
+
+
 
     def handle_input(self, direction):
         row_len = COLS
