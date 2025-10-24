@@ -43,6 +43,7 @@ TEXT_COLOR = (255, 255, 255)
 FOOTER_COLOR = (20, 20, 20)
 
 pygame.init()
+pygame.display.set_mode((1, 1))
 surface = pygame.Surface((SCREEN_W, SCREEN_H))
 clock = pygame.time.Clock()
 font = pygame.font.Font(None, 20)
@@ -147,14 +148,14 @@ REB_icon = load_icon("reboot_ico.png")
 
 # ---------- Создание плиток главного меню ----------
 tiles = [
-    Tile(label=OFF_icon, callback=stub_action("OFF")),
+    Tile(icon=OFF_icon, callback=stub_action("OFF")),
     Tile(label="FLASH", callback=stub_action("FLASH")),
     Tile(label= "LOG", callback=stub_action("LOG")),
-    Tile(icon= "WIFI", callback=stub_action("WIFI")),
-    Tile(label=REB_icon, callback=stub_action("REBOOT")),
+    Tile(label= "WIFI", callback=stub_action("WIFI")),
+    Tile(icon=REB_icon, callback=stub_action("REBOOT")),
     Tile(label="READ\nMAC", callback=stub_action("READ MAC")),
     Tile(label="SET", callback=stub_action("SET")),
-    Tile(icon="BATT", callback=stub_action("BATT"))
+    Tile(label="BATT", callback=stub_action("BATT"))
 ]
 
 menu = TileScreen(tiles)
