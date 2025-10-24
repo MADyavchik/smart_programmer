@@ -161,9 +161,12 @@ def stub_action(name):
     return _
 
 def battery_text():
-    """Возвращает строку для динамической плитки"""
+    """Возвращает уровень батареи в процентах (0–100%)"""
     voltage = batt.get_voltage()
-    return f"{voltage:.2f}V"
+    # Ограничиваем в диапазоне 2.8–4.0 В
+    voltage = max(2.8, min(4.0, voltage))
+    percent = int((voltage - 2.8) / (4.0 - 2.8) * 100)
+    return f"{percent}%"
 
 def battery_color(selected=False):
     """Меняет цвет плитки в зависимости от зарядки"""
