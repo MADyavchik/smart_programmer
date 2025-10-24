@@ -127,7 +127,7 @@ def stub_action(name):
         print(f"[ACTION] {name} clicked!")
     return _
 
-def load_icon(filename, size=(40, 40)):
+def load_icon(filename, size=(32, 32)):
     """
     filename: имя файла иконки, например "wifi.png"
     size: tuple (width, height)
