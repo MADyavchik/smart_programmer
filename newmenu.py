@@ -51,7 +51,7 @@ footer_font = pygame.font.Font(None, 14)
 
 # ---------- Плитка ----------
 class Tile:
-    def __init__(self, label=None, icon=None, callback=None):
+    def __init__(self, label=None, icon=None, callback=None, name=None):
         """
         label: текст плитки
         icon: pygame.Surface с иконкой
@@ -60,6 +60,7 @@ class Tile:
         self.label = label
         self.icon = icon
         self.callback = callback
+        self.name = name
 
     def draw(self, surf, rect, selected=False):
         color = SELECTED_COLOR if selected else TILE_COLOR
@@ -99,8 +100,18 @@ class TileScreen:
         # футер внизу видимой зоны
         footer_rect = pygame.Rect(0, OFFSET_Y + VISIBLE_H - FOOTER_H, SCREEN_W, FOOTER_H)
         pygame.draw.rect(surf_full, FOOTER_COLOR, footer_rect)
-        hint = "↑↓←→ выбор   OK открыть"
-        hint_surf = footer_font.render(hint, True, (180, 180, 180))
+
+        # выводим название выделенной плитки
+        current_tile = self.tiles[self.selected]
+        if current_tile.label:
+            footer_text = current_tile.label
+        elif current_tile.icon:  # если плитка с иконкой, можно задать отдельное имя
+            # например, можно хранить name в Tile
+            footer_text = getattr(current_tile, "name", "Icon")
+        else:
+            footer_text = ""
+
+        hint_surf = footer_font.render(footer_text, True, (180, 180, 180))
         hint_rect = hint_surf.get_rect(center=footer_rect.center)
         surf_full.blit(hint_surf, hint_rect)
 
@@ -152,14 +163,14 @@ READMAC_icon = load_icon("readmac_ico.png")
 
 # ---------- Создание плиток главного меню ----------
 tiles = [
-    Tile(icon=OFF_icon, callback=stub_action("OFF")),
-    Tile(icon=FLASH_icon, callback=stub_action("FLASH")),
-    Tile(icon= LOG_icon, callback=stub_action("LOG")),
-    Tile(label="WIFI", callback=stub_action("WIFI")),
-    Tile(icon=REB_icon, callback=stub_action("REBOOT")),
-    Tile(icon=READMAC_icon, callback=stub_action("READ MAC")),
-    Tile(icon=SET_icon, callback=stub_action("SET")),
-    Tile(label="BATT", callback=stub_action("BATT"))
+    Tile(icon=OFF_icon, callback=stub_action("OFF"), name="Выключение"),
+    Tile(icon=FLASH_icon, callback=stub_action("FLASH"), name="Меню прошивки"),
+    Tile(icon= LOG_icon, callback=stub_action("LOG"), name="Чтение лога"),
+    Tile(label="WIFI", callback=stub_action("WIFI"), name="Инф. о сети WiFi"),
+    Tile(icon=REB_icon, callback=stub_action("REBOOT"), name="Перезагрузка"),
+    Tile(icon=READMAC_icon, callback=stub_action("READ MAC"), name="Считать MAC"),
+    Tile(icon=SET_icon, callback=stub_action("SET"), name="Настройки"),
+    Tile(label="BATT", callback=stub_action("BATT"), name="Инф. о питании")
 ]
 
 menu = TileScreen(tiles)
