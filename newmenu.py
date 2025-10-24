@@ -56,7 +56,7 @@ class Tile:
 
     def draw(self, surf, rect, selected=False):
         color = SELECTED_COLOR if selected else TILE_COLOR
-        pygame.draw.rect(surf, color, rect, border_radius=10)
+        pygame.draw.rect(surf, color, rect, border_radius=5)
         lines = self.label.split("\n")
         for i, line in enumerate(lines):
             txt = font.render(line, True, TEXT_COLOR)
