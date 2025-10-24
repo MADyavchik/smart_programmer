@@ -56,33 +56,38 @@ footer_font = pygame.font.Font(None, int(FOOTER_H-PADDING))
 
 # ---------- Плитка ----------
 class Tile:
-    def __init__(self, label=None, icon=None, callback=None, name=None):
+    def __init__(self, label=None, icon=None, callback=None, name=None, dynamic_label_func=None):
         """
         label: текст плитки
         icon: pygame.Surface с иконкой
         callback: функция при нажатии
+        name: отображаемое имя в футере
+        dynamic_label_func: функция без аргументов, возвращающая текст для отображения
         """
         self.label = label
         self.icon = icon
         self.callback = callback
         self.name = name
+        self.dynamic_label_func = dynamic_label_func
 
     def draw(self, surf, rect, selected=False):
         color = SELECTED_COLOR if selected else TILE_COLOR
         pygame.draw.rect(surf, color, rect, border_radius=5)
 
-        if self.icon:  # рисуем иконку по центру плитки
+        # если есть динамическая функция, обновляем label каждый кадр
+        if self.dynamic_label_func:
+            try:
+                self.label = str(self.dynamic_label_func())
+            except Exception as e:
+                self.label = f"ERR"
+
+        if self.icon:
             icon_rect = self.icon.get_rect(center=rect.center)
             surf.blit(self.icon, icon_rect)
-        elif self.label:  # рисуем текст
-            lines = self.label.split("\n")
-            for i, line in enumerate(lines):
-                txt = font.render(line, True, TEXT_COLOR)
-                total_h = len(lines) * txt.get_height()
-                y_offset = rect.y + (rect.h - total_h) // 2 + i * txt.get_height()
-                x_offset = rect.x + rect.w // 2 - txt.get_width() // 2
-                surf.blit(txt, (x_offset, y_offset))
-
+        elif self.label:
+            txt = font.render(self.label, True, TEXT_COLOR)
+            surf.blit(txt, (rect.centerx - txt.get_width() // 2,
+                            rect.centery - txt.get_height() // 2))
 
 # ---------- Экран плиток ----------
 class TileScreen:
@@ -143,6 +148,11 @@ def stub_action(name):
         print(f"[ACTION] {name} clicked!")
     return _
 
+def battery_text():
+    """Возвращает строку для динамической плитки"""
+    voltage = batt.get_voltage()
+    return f"{voltage:.2f}V"
+
 # загрузка иконок
 def load_icon(filename, size=(32, 32)):
     """
@@ -176,7 +186,7 @@ tiles = [
     Tile(icon=REB_icon, callback=stub_action("REBOOT"), name="Перезагрузка"),
     Tile(icon=READMAC_icon, callback=stub_action("READ MAC"), name="Считать MAC"),
     Tile(icon=SET_icon, callback=stub_action("SET"), name="Настройки"),
-    Tile(label=batt.get_voltage(), callback=stub_action("BATT"), name="Инф. о питании")
+    Tile(dynamic_label_func=battery_text, callback=stub_action("BATT"), name="Инф. о питании")
 ]
 
 menu = TileScreen(tiles)
