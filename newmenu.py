@@ -73,7 +73,9 @@ class TileScreen:
     def draw(self, surf_full):
         surf_full.fill(BG_COLOR)
 
-        # плитки
+        # ограничиваем зону для плиток — без футера
+        tile_area_h = SCREEN_H - FOOTER_H
+
         for i, tile in enumerate(self.tiles):
             col = i % COLS
             row = i // COLS
@@ -83,7 +85,7 @@ class TileScreen:
             tile.draw(surf_full, rect, selected=(i == self.selected))
 
         # футер
-        footer_rect = pygame.Rect(0, SCREEN_H - FOOTER_H, SCREEN_W, FOOTER_H)
+        footer_rect = pygame.Rect(0, tile_area_h, SCREEN_W, FOOTER_H)
         pygame.draw.rect(surf_full, FOOTER_COLOR, footer_rect)
         hint = "↑↓←→ выбор   OK открыть"
         hint_surf = footer_font.render(hint, True, (180, 180, 180))
