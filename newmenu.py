@@ -146,16 +146,19 @@ def load_icon(filename, size=(32, 32)):
 OFF_icon = load_icon("off_ico.png")
 REB_icon = load_icon("reboot_ico.png")
 LOG_icon = load_icon("log_ico.png")
+SET_icon = load_icon("settings_ico.png")
+FLASH_icon = load_icon("flash_ico.png")
+READMAC_icon = load_icon("readmac_ico.png")
 
 # ---------- Создание плиток главного меню ----------
 tiles = [
     Tile(icon=OFF_icon, callback=stub_action("OFF")),
-    Tile(label="FLASH", callback=stub_action("FLASH")),
+    Tile(icon=FLASH_icon, callback=stub_action("FLASH")),
     Tile(icon= LOG_icon, callback=stub_action("LOG")),
-    Tile(label= "WIFI", callback=stub_action("WIFI")),
+    Tile(label="WIFI", callback=stub_action("WIFI")),
     Tile(icon=REB_icon, callback=stub_action("REBOOT")),
-    Tile(label="READ\nMAC", callback=stub_action("READ MAC")),
-    Tile(label="SET", callback=stub_action("SET")),
+    Tile(icon=READMAC_icon, callback=stub_action("READ MAC")),
+    Tile(icon=SET_icon, callback=stub_action("SET")),
     Tile(label="BATT", callback=stub_action("BATT"))
 ]
 
