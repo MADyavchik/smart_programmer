@@ -145,12 +145,13 @@ def load_icon(filename, size=(40, 40)):
 # пример использования
 OFF_icon = load_icon("off_ico.png")
 REB_icon = load_icon("reboot_ico.png")
+LOG_icon = load_icon("log_ico.png")
 
 # ---------- Создание плиток главного меню ----------
 tiles = [
     Tile(icon=OFF_icon, callback=stub_action("OFF")),
     Tile(label="FLASH", callback=stub_action("FLASH")),
-    Tile(label= "LOG", callback=stub_action("LOG")),
+    Tile(icon= LOG_icon, callback=stub_action("LOG")),
     Tile(label= "WIFI", callback=stub_action("WIFI")),
     Tile(icon=REB_icon, callback=stub_action("REBOOT")),
     Tile(label="READ\nMAC", callback=stub_action("READ MAC")),
