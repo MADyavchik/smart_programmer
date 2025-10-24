@@ -114,42 +114,93 @@ menu = TileScreen(tiles)
 
 
 # ---------- чтение GPIO-кнопок ----------
-def read_gpio_input():
-    if not GPIO.input(KEY_UP):
-        return "UP"
-    if not GPIO.input(KEY_DOWN):
-        return "DOWN"
-    if not GPIO.input(KEY_LEFT):
-        return "LEFT"
-    if not GPIO.input(KEY_RIGHT):
-        return "RIGHT"
-    if not GPIO.input(KEY_OK):
-        return "OK"
-    if not GPIO.input(KEY_BACK):
-        return "BACK"
+# ---- Заменить старую функцию read_gpio_input() и главный цикл main() на этот блок ----
+
+# карта пинов -> имя события
+PIN_TO_KEY = {
+    KEY_UP: "UP",
+    KEY_DOWN: "DOWN",
+    KEY_LEFT: "LEFT",
+    KEY_RIGHT: "RIGHT",
+    KEY_OK: "OK",
+    KEY_BACK: "BACK",
+}
+
+# для антидребезга и детекции фронтов
+last_pin_state = {pin: True for pin in PIN_TO_KEY.keys()}  # True == PUD_UP (not pressed)
+last_event_time = {pin: 0 for pin in PIN_TO_KEY.keys()}
+DEBOUNCE_SEC = 0.15
+
+def poll_buttons():
+    """
+    Возвращает название события при обнаружении перехода HIGH->LOW (нажатия).
+    Возвращает None если нет нового события.
+    Реализован debounce по времени и ожидание отпускания — функция сама не ждёт отпускания,
+    но основная логика в main ниже ожидает отпускания для OK, если нужно.
+    """
+    now = time.time()
+    for pin, name in PIN_TO_KEY.items():
+        state = GPIO.input(pin)  # True == not pressed, False == pressed (pull-up)
+        last = last_pin_state[pin]
+        # detect falling edge
+        if last and not state:
+            # возможное нажатие
+            if now - last_event_time[pin] >= DEBOUNCE_SEC:
+                last_event_time[pin] = now
+                last_pin_state[pin] = state
+                return name
+        # update state when released (rising edge) so next press can be detected
+        if not last and state:
+            last_pin_state[pin] = state
     return None
 
+def wait_release(pin, timeout=1.5):
+    """
+    Блокирует до отпускания кнопки или timeout.
+    Используется чтобы не генерировать авто-повтор при удержании.
+    """
+    start = time.time()
+    while GPIO.input(pin) == GPIO.LOW and (time.time() - start) < timeout:
+        time.sleep(0.01)
 
-# ---------- основной цикл ----------
 def main():
-    while True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                GPIO.cleanup()
-                sys.exit()
+    try:
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    GPIO.cleanup()
+                    return
 
-        key = read_gpio_input()
-        if key:
-            if key == "BACK":
-                print("[BACK] pressed")
-            else:
-                menu.handle_input(key)
-            time.sleep(0.2)  # антидребезг
+            ev = poll_buttons()
+            if ev:
+                # если OK — ждём отпускания кнопки, чтобы не было множества срабатываний
+                if ev == "OK":
+                    menu.handle_input("OK")
+                    wait_release(KEY_OK)
+                elif ev == "BACK":
+                    # твоя логика для BACK
+                    print("[BACK] pressed")
+                    wait_release(KEY_BACK)
+                else:
+                    # стрелки — просто прокрутка, можно не ждать отпускания
+                    if ev == "UP":
+                        menu.handle_input("UP")
+                    elif ev == "DOWN":
+                        menu.handle_input("DOWN")
+                    elif ev == "LEFT":
+                        menu.handle_input("LEFT")
+                    elif ev == "RIGHT":
+                        menu.handle_input("RIGHT")
+                # краткая пауза после обработки, дополнительный защитный механизм
+                time.sleep(0.05)
 
-        menu.draw(screen)
-        clock.tick(30)
+            menu.draw(screen)
+            clock.tick(30)
 
+    finally:
+        GPIO.cleanup()
 
+# если файл запускается как main
 if __name__ == "__main__":
     main()
