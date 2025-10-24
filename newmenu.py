@@ -44,8 +44,8 @@ TILE_H = AVAILABLE_H // ROWS
 BG_COLOR = (30, 30, 30)
 TILE_COLOR = (180, 140, 0)      # тёмно-жёлтый
 SELECTED_COLOR = (255, 220, 0)  # ярко-жёлтый
-TEXT_COLOR = (255, 255, 255)
-FOOTER_COLOR = (20, 20, 20)
+TEXT_COLOR = (0, 0, 0)
+FOOTER_COLOR = (180, 140, 0)
 
 pygame.init()
 pygame.display.set_mode((1, 1))
