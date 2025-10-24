@@ -22,12 +22,16 @@ GPIO.setmode(GPIO.BCM)
 for pin in [KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_OK]:
     GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
-# ---------- параметры интерфейса ----------
+ # ---------- параметры интерфейса ----------
 SCREEN_W, SCREEN_H = 320, 240
-VISIBLE_H = 170
 COLS, ROWS = 4, 2
 PADDING = 4
-TILE_SIZE = (SCREEN_W - (COLS + 1) * PADDING) // COLS
+FOOTER_H = 20
+
+ # рассчитываем доступную высоту под плитки
+TILE_H_AVAILABLE = SCREEN_H - FOOTER_H - (ROWS + 1) * PADDING
+TILE_H = TILE_H_AVAILABLE // ROWS
+TILE_W = (SCREEN_W - (COLS + 1) * PADDING) // COLS
 
 BG_COLOR = (30, 30, 30)
 TILE_COLOR = (60, 60, 60)
@@ -65,27 +69,24 @@ class TileScreen:
         self.selected = 0
 
     def draw(self, surf_full):
-        temp = pygame.Surface((SCREEN_W, VISIBLE_H))
-        temp.fill(BG_COLOR)
+        surf_full.fill(BG_COLOR)
 
+        # плитки
         for i, tile in enumerate(self.tiles):
             col = i % COLS
             row = i // COLS
-            x = PADDING + col * (TILE_SIZE + PADDING)
-            y = PADDING + row * (TILE_SIZE + PADDING)
-            rect = pygame.Rect(x, y, TILE_SIZE, TILE_SIZE)
-            tile.draw(temp, rect, selected=(i == self.selected))
+            x = PADDING + col * (TILE_W + PADDING)
+            y = PADDING + row * (TILE_H + PADDING)
+            rect = pygame.Rect(x, y, TILE_W, TILE_H)
+            tile.draw(surf_full, rect, selected=(i == self.selected))
 
-        footer_h = 18
-        footer_rect = pygame.Rect(0, VISIBLE_H - footer_h, SCREEN_W, footer_h)
-        pygame.draw.rect(temp, FOOTER_COLOR, footer_rect)
+        # футер
+        footer_rect = pygame.Rect(0, SCREEN_H - FOOTER_H, SCREEN_W, FOOTER_H)
+        pygame.draw.rect(surf_full, FOOTER_COLOR, footer_rect)
         hint = "↑↓←→ выбор   OK открыть"
         hint_surf = footer_font.render(hint, True, (180, 180, 180))
         hint_rect = hint_surf.get_rect(center=footer_rect.center)
-        temp.blit(hint_surf, hint_rect)
-
-        offset_top = (SCREEN_H - VISIBLE_H) // 2
-        surf_full.blit(temp, (0, offset_top))
+        surf_full.blit(hint_surf, hint_rect)
 
     def handle_input(self, direction):
         row_len = COLS
