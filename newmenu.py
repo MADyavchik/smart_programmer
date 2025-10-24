@@ -57,14 +57,10 @@ footer_font = pygame.font.Font(None, int(FOOTER_H-PADDING))
 # ---------- Плитка ----------
 class Tile:
     def __init__(self, label=None, icon=None, callback=None, name=None,
-                 dynamic_label_func=None, dynamic_color_func=None):
+                 dynamic_label_func=None, dynamic_color_func=None,
+                 dynamic_icon_func=None):
         """
-        label: текст плитки
-        icon: pygame.Surface с иконкой
-        callback: функция при нажатии
-        name: отображаемое имя в футере
-        dynamic_label_func: функция без аргументов, возвращающая текст
-        dynamic_color_func: функция без аргументов, возвращающая цвет плитки (r,g,b)
+        dynamic_icon_func: функция без аргументов, возвращающая pygame.Surface
         """
         self.label = label
         self.icon = icon
@@ -72,9 +68,10 @@ class Tile:
         self.name = name
         self.dynamic_label_func = dynamic_label_func
         self.dynamic_color_func = dynamic_color_func
+        self.dynamic_icon_func = dynamic_icon_func
 
     def draw(self, surf, rect, selected=False):
-        # --- вычисляем цвет ---
+        # цвет плитки
         if self.dynamic_color_func:
             try:
                 color = self.dynamic_color_func(selected)
@@ -85,17 +82,25 @@ class Tile:
 
         pygame.draw.rect(surf, color, rect, border_radius=5)
 
-        # --- обновляем текст если надо ---
+        # обновляем текст если есть dynamic_label_func
         if self.dynamic_label_func:
             try:
                 self.label = str(self.dynamic_label_func())
             except Exception:
                 self.label = "ERR"
 
-        # --- контент ---
-        if self.icon:
-            icon_rect = self.icon.get_rect(center=rect.center)
-            surf.blit(self.icon, icon_rect)
+        # выбираем иконку
+        icon_to_draw = self.icon
+        if self.dynamic_icon_func:
+            try:
+                icon_to_draw = self.dynamic_icon_func()
+            except Exception:
+                pass
+
+        # рисуем контент
+        if icon_to_draw:
+            icon_rect = icon_to_draw.get_rect(center=rect.center)
+            surf.blit(icon_to_draw, icon_rect)
         elif self.label:
             txt = font.render(self.label, True, TEXT_COLOR)
             surf.blit(txt, (rect.centerx - txt.get_width() // 2,
@@ -191,6 +196,8 @@ def battery_color(selected=False):
 
     return highlight if selected else color
 
+
+
 # загрузка иконок
 def load_icon(filename, size=(32, 32)):
     """
@@ -215,13 +222,29 @@ SET_icon = load_icon("settings_ico.png")
 FLASH_icon = load_icon("flash_ico.png")
 READMAC_icon = load_icon("readmac_ico.png")
 BATT_icon = load_icon("batt_ico.png")
+WIFI0_icon = load_icon("wifi0_ico.png")
+WIFI1_icon = load_icon("wifi1_ico.png")
+WIFI2_icon = load_icon("wifi2_ico.png")
+WIFI3_icon = load_icon("wifi3_ico.png")
+
+def wifi_icon_func():
+    """Выбирает иконку WiFi в зависимости от уровня сигнала"""
+    quality = wifi.get_quality_percent()
+    if quality is None or quality == 0:
+        return WIFI0_icon  # нет сигнала
+    elif quality <= 30:
+        return WIFI1_icon  # слабый сигнал
+    elif quality <= 70:
+        return WIFI2_icon  # средний сигнал
+    else:
+        return WIFI3_icon  # хороший сигнал
 
 # ---------- Создание плиток главного меню ----------
 tiles = [
     Tile(icon=OFF_icon, callback=stub_action("OFF"), name="Выключение"),
     Tile(icon=FLASH_icon, callback=stub_action("FLASH"), name="Меню прошивки"),
     Tile(icon= LOG_icon, callback=stub_action("LOG"), name="Чтение лога"),
-    Tile(label="WIFI", callback=stub_action("WIFI"), name="Инф. о сети WiFi"),
+    Tile(dynamic_icon_func=wifi_icon_func, callback=stub_action("WIFI"), name="Инф. о сети WiFi"),
     Tile(icon=REB_icon, callback=stub_action("REBOOT"), name="Перезагрузка"),
     Tile(icon=READMAC_icon, callback=stub_action("READ MAC"), name="Считать MAC"),
     Tile(icon=SET_icon, callback=stub_action("SET"), name="Настройки"),
