@@ -6,6 +6,11 @@ import RPi.GPIO as GPIO
 from PIL import Image
 from luma.core.interface.serial import spi
 from luma.lcd.device import st7789
+from system_status import BatteryMonitor, WifiMonitor
+
+# system_status
+batt = BatteryMonitor(multiplier=2.0, charge_pin=21)
+wifi = WifiMonitor(interface="wlan0")
 
 # ---------- Настройки дисплея ----------
 serial = spi(port=0, device=0, gpio_DC=25, gpio_RST=16, bus_speed_hz=40000000)
@@ -138,6 +143,7 @@ def stub_action(name):
         print(f"[ACTION] {name} clicked!")
     return _
 
+# загрузка иконок
 def load_icon(filename, size=(32, 32)):
     """
     filename: имя файла иконки, например "wifi.png"
@@ -153,7 +159,7 @@ def load_icon(filename, size=(32, 32)):
     img = pygame.transform.smoothscale(img, size)
     return img
 
-# пример использования
+# иконки
 OFF_icon = load_icon("off_ico.png")
 REB_icon = load_icon("reboot_ico.png")
 LOG_icon = load_icon("log_ico.png")
@@ -170,7 +176,7 @@ tiles = [
     Tile(icon=REB_icon, callback=stub_action("REBOOT"), name="Перезагрузка"),
     Tile(icon=READMAC_icon, callback=stub_action("READ MAC"), name="Считать MAC"),
     Tile(icon=SET_icon, callback=stub_action("SET"), name="Настройки"),
-    Tile(label="BATT", callback=stub_action("BATT"), name="Инф. о питании")
+    Tile(label=batt.get_voltage(), callback=stub_action("BATT"), name="Инф. о питании")
 ]
 
 menu = TileScreen(tiles)
