@@ -24,15 +24,16 @@ for pin in [KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_OK]:
 
  # ---------- параметры интерфейса ----------
 SCREEN_W, SCREEN_H = 320, 240
+VISIBLE_H = 170   # активная высота матрицы
+OFFSET_Y = (SCREEN_H - VISIBLE_H) // 2
+
 COLS, ROWS = 4, 2
 PADDING = 4
 FOOTER_H = 20
 
-# сначала считаем ширину плитки (фиксировано по ширине экрана)
+# вычисляем размеры плиток внутри видимой зоны
+AVAILABLE_H = VISIBLE_H - FOOTER_H - (ROWS + 1) * PADDING
 TILE_W = (SCREEN_W - (COLS + 1) * PADDING) // COLS
-
-# доступная высота под плитки = высота экрана - футер - отступы
-AVAILABLE_H = SCREEN_H - FOOTER_H - (ROWS + 1) * PADDING
 TILE_H = AVAILABLE_H // ROWS
 
 BG_COLOR = (30, 30, 30)
@@ -73,19 +74,17 @@ class TileScreen:
     def draw(self, surf_full):
         surf_full.fill(BG_COLOR)
 
-        # ограничиваем зону для плиток — без футера
-        tile_area_h = SCREEN_H - FOOTER_H
-
+        # рисуем плитки в видимой области
         for i, tile in enumerate(self.tiles):
             col = i % COLS
             row = i // COLS
             x = PADDING + col * (TILE_W + PADDING)
-            y = PADDING + row * (TILE_H + PADDING)
+            y = OFFSET_Y + PADDING + row * (TILE_H + PADDING)
             rect = pygame.Rect(x, y, TILE_W, TILE_H)
             tile.draw(surf_full, rect, selected=(i == self.selected))
 
-        # футер
-        footer_rect = pygame.Rect(0, tile_area_h, SCREEN_W, FOOTER_H)
+        # футер внизу видимой зоны
+        footer_rect = pygame.Rect(0, OFFSET_Y + VISIBLE_H - FOOTER_H, SCREEN_W, FOOTER_H)
         pygame.draw.rect(surf_full, FOOTER_COLOR, footer_rect)
         hint = "↑↓←→ выбор   OK открыть"
         hint_surf = footer_font.render(hint, True, (180, 180, 180))
