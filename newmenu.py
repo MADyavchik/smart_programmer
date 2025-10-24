@@ -247,12 +247,25 @@ def wifi_text():
         return "WiFi: нет соединения"
     return f"{ssid} ({rssi} dBm)"
 
+def wifi_color(selected=False):
+    """Цвет плитки WiFi в зависимости от качества сигнала"""
+    quality = wifi.get_quality_percent()
+
+    if quality is None or quality == 0:
+        color = (180, 50, 50)    # красный при отсутствии сигнала
+        highlight = (255, 80, 80)
+    else:
+        color = (255, 255, 255)  # белый при нормальном сигнале
+        highlight = (255, 255, 255)
+
+    return highlight if selected else color
+
 # ---------- Создание плиток главного меню ----------
 tiles = [
     Tile(icon=OFF_icon, callback=stub_action("OFF"), name="Выключение"),
     Tile(icon=FLASH_icon, callback=stub_action("FLASH"), name="Меню прошивки"),
     Tile(icon= LOG_icon, callback=stub_action("LOG"), name="Чтение лога"),
-    Tile(dynamic_icon_func=wifi_icon_func, callback=stub_action("WIFI"), dynamic_label_func=wifi_text),
+    Tile(dynamic_icon_func=wifi_icon_func, dynamic_color_func=wifi_color, callback=stub_action("WIFI"), dynamic_label_func=wifi_text),
     Tile(icon=REB_icon, callback=stub_action("REBOOT"), name="Перезагрузка"),
     Tile(icon=READMAC_icon, callback=stub_action("READ MAC"), name="Считать MAC"),
     Tile(icon=SET_icon, callback=stub_action("SET"), name="Настройки"),
