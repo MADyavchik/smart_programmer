@@ -255,7 +255,7 @@ def wifi_color(selected=False):
         color = (180, 50, 50)    # красный при отсутствии сигнала
         highlight = (255, 80, 80)
     else:
-        color = (255, 255, 255)  # белый при нормальном сигнале
+        color = (200, 200, 200)  # белый при нормальном сигнале
         highlight = (255, 255, 255)
 
     return highlight if selected else color
