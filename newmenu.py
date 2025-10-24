@@ -50,20 +50,32 @@ footer_font = pygame.font.Font(None, 14)
 
 # ---------- Плитка ----------
 class Tile:
-    def __init__(self, label, callback=None):
+    def __init__(self, label=None, icon=None, callback=None):
+        """
+        label: текст плитки
+        icon: pygame.Surface с иконкой
+        callback: функция при нажатии
+        """
         self.label = label
+        self.icon = icon
         self.callback = callback
 
     def draw(self, surf, rect, selected=False):
         color = SELECTED_COLOR if selected else TILE_COLOR
         pygame.draw.rect(surf, color, rect, border_radius=5)
-        lines = self.label.split("\n")
-        for i, line in enumerate(lines):
-            txt = font.render(line, True, TEXT_COLOR)
-            total_h = len(lines) * txt.get_height()
-            y_offset = rect.y + (rect.h - total_h) // 2 + i * txt.get_height()
-            x_offset = rect.x + rect.w // 2 - txt.get_width() // 2
-            surf.blit(txt, (x_offset, y_offset))
+
+        if self.icon:  # рисуем иконку по центру плитки
+            icon_rect = self.icon.get_rect(center=rect.center)
+            surf.blit(self.icon, icon_rect)
+        elif self.label:  # рисуем текст
+            lines = self.label.split("\n")
+            for i, line in enumerate(lines):
+                txt = font.render(line, True, TEXT_COLOR)
+                total_h = len(lines) * txt.get_height()
+                y_offset = rect.y + (rect.h - total_h) // 2 + i * txt.get_height()
+                x_offset = rect.x + rect.w // 2 - txt.get_width() // 2
+                surf.blit(txt, (x_offset, y_offset))
+
 
 # ---------- Экран плиток ----------
 class TileScreen:
@@ -114,11 +126,40 @@ def stub_action(name):
         print(f"[ACTION] {name} clicked!")
     return _
 
-# ---------- создаём главное меню ----------
-labels = ["OFF", "FLASH", "LOG", "WIFI",
-          "REBOOT", "READ\nMAC", "SET", "BATT"]
-tiles = [Tile(lbl, callback=stub_action(lbl)) for lbl in labels]
+def load_icon(filename, size=(40, 40)):
+    """
+    filename: имя файла иконки, например "wifi.png"
+    size: tuple (width, height)
+    """
+    base_path = os.path.dirname(os.path.abspath(__file__))  # папка скрипта
+    full_path = os.path.join(base_path, "icons", filename)  # папка icons
+
+    if not os.path.exists(full_path):
+        raise FileNotFoundError(f"Icon not found: {full_path}")
+
+    img = pygame.image.load(full_path).convert_alpha()
+    img = pygame.transform.smoothscale(img, size)
+    return img
+
+# пример использования
+OFF_icon = load_icon("off_ico.png")
+REB_icon = load_icon("reboot_ico.png")
+
+# ---------- Создание плиток главного меню ----------
+tiles = [
+    Tile(label=OFF_icon, callback=stub_action("OFF")),
+    Tile(label="FLASH", callback=stub_action("FLASH")),
+    Tile(label= "LOG", callback=stub_action("LOG")),
+    Tile(icon= "WIFI", callback=stub_action("WIFI")),
+    Tile(label=REB_icon, callback=stub_action("REBOOT")),
+    Tile(label="READ\nMAC", callback=stub_action("READ MAC")),
+    Tile(label="SET", callback=stub_action("SET")),
+    Tile(icon="BATT", callback=stub_action("BATT"))
+]
+
 menu = TileScreen(tiles)
+
+
 
 # ---------- GPIO логика ----------
 PIN_TO_KEY = {
