@@ -52,7 +52,7 @@ pygame.display.set_mode((1, 1))
 surface = pygame.Surface((SCREEN_W, SCREEN_H))
 clock = pygame.time.Clock()
 font = pygame.font.Font(None, 20)
-footer_font = pygame.font.Font(None, int(FOOTER_H-2))
+footer_font = pygame.font.Font(None, FOOTER_H)
 
 # ---------- Плитка ----------
 class Tile:
