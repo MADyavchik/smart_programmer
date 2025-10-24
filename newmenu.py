@@ -140,7 +140,7 @@ class TileScreen:
         else:
             footer_text = ""
 
-        hint_surf = footer_font.render(footer_text, True, (255, 255, 255))
+        hint_surf = footer_font.render(footer_text, True, SELECTED_COLOR)
         hint_rect = hint_surf.get_rect(center=footer_rect.center)
         surf_full.blit(hint_surf, hint_rect)
 
