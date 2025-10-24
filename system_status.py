@@ -58,6 +58,7 @@ class WifiMonitor:
         self._last_update = 0
         self._cached_rssi = None
         self._cached_quality = None
+        self._cached_ssid = None
 
     def _update_data(self):
         """Читает данные WiFi через iwconfig, если кэш устарел"""
@@ -66,6 +67,7 @@ class WifiMonitor:
             return  # используем кэш
 
         try:
+            # RSSI и качество
             result = subprocess.run(
                 ["iwconfig", self.interface],
                 capture_output=True,
@@ -88,10 +90,22 @@ class WifiMonitor:
                                 pass
             self._cached_rssi = rssi
             self._cached_quality = quality
+
+            # SSID
+            try:
+                ssid_result = subprocess.run(
+                    ["iwgetid", "-r", self.interface],
+                    capture_output=True, text=True
+                )
+                self._cached_ssid = ssid_result.stdout.strip() or None
+            except Exception:
+                self._cached_ssid = None
+
             self._last_update = now
         except Exception:
             self._cached_rssi = None
             self._cached_quality = None
+            self._cached_ssid = None
 
     def get_signal_level(self) -> int | None:
         """Возвращает уровень сигнала WiFi (RSSI, dBm)"""
@@ -103,12 +117,17 @@ class WifiMonitor:
         self._update_data()
         return self._cached_quality
 
+    def get_ssid(self) -> str | None:
+        """Возвращает SSID текущей WiFi сети"""
+        self._update_data()
+        return self._cached_ssid
+
     def get_status_text(self) -> str:
         """Возвращает строку для отображения статуса WiFi"""
         self._update_data()
         if self._cached_quality is None:
             return "📶 WiFi: нет соединения"
-        return f"📶 WiFi: {self._cached_quality}% ({self._cached_rssi} dBm)"
+        return f"📶 WiFi: {self._cached_ssid} ({self._cached_rssi} dBm)"
 
 
 # ==================== DEMO ==================== #

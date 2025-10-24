@@ -239,12 +239,20 @@ def wifi_icon_func():
     else:
         return WIFI3_icon  # хороший сигнал
 
+def wifi_text():
+    """Возвращает строку для футера: SSID + уровень сигнала"""
+    ssid = wifi.get_ssid()
+    rssi = wifi.get_signal_level()
+    if ssid is None or rssi is None:
+        return "📶 WiFi: нет соединения"
+    return f"📶 {ssid} ({rssi} dBm)"
+
 # ---------- Создание плиток главного меню ----------
 tiles = [
     Tile(icon=OFF_icon, callback=stub_action("OFF"), name="Выключение"),
     Tile(icon=FLASH_icon, callback=stub_action("FLASH"), name="Меню прошивки"),
     Tile(icon= LOG_icon, callback=stub_action("LOG"), name="Чтение лога"),
-    Tile(dynamic_icon_func=wifi_icon_func, callback=stub_action("WIFI"), name="Инф. о сети WiFi"),
+    Tile(dynamic_icon_func=wifi_icon_func, callback=stub_action("WIFI"), dynamic_label_func=wifi_text),
     Tile(icon=REB_icon, callback=stub_action("REBOOT"), name="Перезагрузка"),
     Tile(icon=READMAC_icon, callback=stub_action("READ MAC"), name="Считать MAC"),
     Tile(icon=SET_icon, callback=stub_action("SET"), name="Настройки"),
