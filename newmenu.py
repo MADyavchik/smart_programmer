@@ -29,7 +29,7 @@ OFFSET_Y = (SCREEN_H - VISIBLE_H) // 2
 
 COLS, ROWS = 4, 2
 PADDING = 4
-FOOTER_H = 20
+FOOTER_H = 25
 
 # вычисляем размеры плиток внутри видимой зоны
 AVAILABLE_H = VISIBLE_H - FOOTER_H - (ROWS + 1) * PADDING
@@ -47,7 +47,7 @@ pygame.display.set_mode((1, 1))
 surface = pygame.Surface((SCREEN_W, SCREEN_H))
 clock = pygame.time.Clock()
 font = pygame.font.Font(None, 20)
-footer_font = pygame.font.Font(None, 14)
+footer_font = pygame.font.Font(None, int(FOOTER_H-PADDING))
 
 # ---------- Плитка ----------
 class Tile:
