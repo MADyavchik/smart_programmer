@@ -303,7 +303,7 @@ def main():
             surface.fill((0, 0, 0))
             menu.draw(surface)
 
-            raw_str = pygame.image.tostring(surface, "RGB")
+            raw_str = pygame.image.tobytes(surface, "RGB")
             img = Image.frombytes("RGB", (SCREEN_W, SCREEN_H), raw_str)
             device.display(img)
 
