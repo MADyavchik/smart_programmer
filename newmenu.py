@@ -56,31 +56,43 @@ footer_font = pygame.font.Font(None, int(FOOTER_H-PADDING))
 
 # ---------- Плитка ----------
 class Tile:
-    def __init__(self, label=None, icon=None, callback=None, name=None, dynamic_label_func=None):
+    def __init__(self, label=None, icon=None, callback=None, name=None,
+                 dynamic_label_func=None, dynamic_color_func=None):
         """
         label: текст плитки
         icon: pygame.Surface с иконкой
         callback: функция при нажатии
         name: отображаемое имя в футере
-        dynamic_label_func: функция без аргументов, возвращающая текст для отображения
+        dynamic_label_func: функция без аргументов, возвращающая текст
+        dynamic_color_func: функция без аргументов, возвращающая цвет плитки (r,g,b)
         """
         self.label = label
         self.icon = icon
         self.callback = callback
         self.name = name
         self.dynamic_label_func = dynamic_label_func
+        self.dynamic_color_func = dynamic_color_func
 
     def draw(self, surf, rect, selected=False):
-        color = SELECTED_COLOR if selected else TILE_COLOR
+        # --- вычисляем цвет ---
+        if self.dynamic_color_func:
+            try:
+                color = self.dynamic_color_func(selected)
+            except Exception:
+                color = SELECTED_COLOR if selected else TILE_COLOR
+        else:
+            color = SELECTED_COLOR if selected else TILE_COLOR
+
         pygame.draw.rect(surf, color, rect, border_radius=5)
 
-        # если есть динамическая функция, обновляем label каждый кадр
+        # --- обновляем текст если надо ---
         if self.dynamic_label_func:
             try:
                 self.label = str(self.dynamic_label_func())
-            except Exception as e:
-                self.label = f"ERR"
+            except Exception:
+                self.label = "ERR"
 
+        # --- контент ---
         if self.icon:
             icon_rect = self.icon.get_rect(center=rect.center)
             surf.blit(self.icon, icon_rect)
@@ -153,6 +165,16 @@ def battery_text():
     voltage = batt.get_voltage()
     return f"{voltage:.2f}V"
 
+def battery_color(selected=False):
+    """Меняет цвет плитки в зависимости от зарядки"""
+    charging = batt.is_charging()
+    if charging:
+        # зелёный при зарядке
+        return (0, 200, 0) if not selected else (0, 255, 0)
+    else:
+        # красный при разрядке
+        return (180, 50, 50) if not selected else (255, 80, 80)
+
 # загрузка иконок
 def load_icon(filename, size=(32, 32)):
     """
@@ -186,7 +208,7 @@ tiles = [
     Tile(icon=REB_icon, callback=stub_action("REBOOT"), name="Перезагрузка"),
     Tile(icon=READMAC_icon, callback=stub_action("READ MAC"), name="Считать MAC"),
     Tile(icon=SET_icon, callback=stub_action("SET"), name="Настройки"),
-    Tile(dynamic_label_func=battery_text, callback=stub_action("BATT"), name="Инф. о питании")
+    Tile(dynamic_label_func=battery_text, dynamic_color_func=battery_color, callback=stub_action("BATT"), name="Инф. о питании")
 ]
 
 menu = TileScreen(tiles)
