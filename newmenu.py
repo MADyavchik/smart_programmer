@@ -1,4 +1,4 @@
-# tile_menu.py
+# newmenu.py
 import os
 import time
 import pygame
@@ -227,6 +227,51 @@ WIFI1_icon = load_icon("wifi1_ico.png")
 WIFI2_icon = load_icon("wifi2_ico.png")
 WIFI3_icon = load_icon("wifi3_ico.png")
 
+class ScreenManager:
+    def __init__(self, root_screen):
+        self.screens = [root_screen]
+
+    @property
+    def current(self):
+        return self.screens[-1]
+
+    def open(self, new_screen):
+        self.screens.append(new_screen)
+
+    def back(self):
+        if len(self.screens) > 1:
+            self.screens.pop()
+
+    def reset(self):
+        if len(self.screens) > 1:
+            self.screens = [self.screens[0]]
+
+    def draw(self, surf):
+        self.current.draw(surf)
+
+    def handle_input(self, direction):
+        self.current.handle_input(direction)
+
+def open_flash_version_menu():
+    """Открывает подменю выбора версии прошивки"""
+    versions = ["v1.0.0", "v1.1.0", "v1.2.0"]
+    tiles = []
+    for ver in versions:
+        tiles.append(Tile(label=ver, callback=lambda v=ver: manager.open(make_flash_type_menu(v))))
+    tiles.append(Tile(label="Назад", callback=lambda: manager.back()))
+    screen = TileScreen(tiles)
+    manager.open(screen)
+
+def make_flash_type_menu(version: str):
+    """Создаёт подменю выбора типа прошивки для выбранной версии"""
+    tiles = [
+        Tile(label="FULL", callback=stub_action(f"FLASH {version} FULL")),
+        Tile(label="LIGHT", callback=stub_action(f"FLASH {version} LIGHT")),
+        Tile(label="DEBUG", callback=stub_action(f"FLASH {version} DEBUG")),
+        Tile(label="Назад", callback=lambda: manager.back())
+    ]
+    return TileScreen(tiles)
+
 def wifi_icon_func():
     """Выбирает иконку WiFi в зависимости от уровня сигнала"""
     quality = wifi.get_quality_percent()
@@ -272,7 +317,8 @@ tiles = [
     Tile(icon=BATT_icon, dynamic_color_func=battery_color, callback=stub_action("BATT"), dynamic_label_func=battery_text)
 ]
 
-menu = TileScreen(tiles)
+main_menu = TileScreen(tiles)
+manager = ScreenManager(main_menu)
 
 
 
@@ -315,14 +361,14 @@ def main():
             key = poll_buttons()
             if key:
                 if key == "OK":
-                    menu.handle_input("OK")
+                    manager.current.handle_input("OK")
                     wait_release(KEY_OK)
                 else:
-                    menu.handle_input(key)
+                    manager.current.handle_input(key)
                 time.sleep(0.05)
 
-            surface.fill((0, 0, 0))
-            menu.draw(surface)
+            surface.fill(BG_COLOR)
+            manager.draw(surface)
 
             raw_str = pygame.image.tobytes(surface, "RGB")
             img = Image.frombytes("RGB", (SCREEN_W, SCREEN_H), raw_str)
@@ -333,6 +379,3 @@ def main():
     finally:
         GPIO.cleanup()
         pygame.quit()
-
-if __name__ == "__main__":
-    main()
