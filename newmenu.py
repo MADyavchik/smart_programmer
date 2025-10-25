@@ -308,7 +308,7 @@ def wifi_color(selected=False):
 # ---------- Создание плиток главного меню ----------
 tiles = [
     Tile(icon=OFF_icon, callback=stub_action("OFF"), name="Выключение"),
-    Tile(icon=FLASH_icon, callback=stub_action("FLASH"), name="Меню прошивки"),
+    Tile(icon=FLASH_icon, callback=open_flash_version_menu, name="Меню прошивки"),
     Tile(icon= LOG_icon, callback=stub_action("LOG"), name="Чтение лога"),
     Tile(dynamic_icon_func=wifi_icon_func, dynamic_color_func=wifi_color, callback=stub_action("WIFI"), dynamic_label_func=wifi_text),
     Tile(icon=REB_icon, callback=stub_action("REBOOT"), name="Перезагрузка"),
