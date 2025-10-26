@@ -288,9 +288,7 @@ def make_flash_type_menu(manager, version_dir):
         tiles.append(Tile(label=f, callback=lambda f=f: stub_action(f"FLASH {version_dir}/{f}")()))
 
     # Создаём экран
-    screen = TileScreen(tiles)
-    manager.open(screen)
-    return screen  # <- возвращаем экран, чтобы было явно
+    return TileScreen(tiles)
 
 
 def open_flash_version_menu(manager):
