@@ -284,9 +284,14 @@ def make_flash_type_menu(manager, version_dir):
     tiles.append(Tile(icon=BACK_icon, callback=lambda: manager.back(), name="Назад"))
 
     for f in bin_files:
-        # обязательно создаём callback правильно, чтобы не потерять переменную f
-        tiles.append(Tile(label=f, callback=lambda f=f: stub_action(f"FLASH {version_dir}/{f}")()))
-
+        short_label = f[:2]  # первые две буквы для отображения на плитке
+        tiles.append(
+            Tile(
+                label=short_label,                 # то, что видим на плитке
+                name=f,                            # полное имя для footer/логики
+                callback=lambda f=f: stub_action(f"FLASH {version_dir}/{f}")()
+            )
+        )
     # Создаём экран
     return TileScreen(tiles)
 
