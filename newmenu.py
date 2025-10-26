@@ -271,7 +271,12 @@ def make_flash_type_menu(manager, version):
     return TileScreen(tiles)
 
 def open_flash_version_menu(manager):
-    versions = ["v1.0.0", "v1.1.0", "v1.2.0"]
+    base_path = "/root/smart_programmer/firmware"
+    #versions = ["v1.0.0", "v1.1.0", "v1.2.0"]
+    versions = [f for f in os.listdir(base_path)
+                   if os.path.isdir(os.path.join(base_path, f))]
+    versions.sort(reverse=True)
+
     tiles = []
     for ver in versions:
         tiles.append(Tile(label=ver, callback=lambda v=ver: manager.open(make_flash_type_menu(manager, v))))
