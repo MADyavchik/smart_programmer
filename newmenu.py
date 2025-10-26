@@ -264,28 +264,55 @@ main_menu = TileScreen(main_tiles)
 manager = ScreenManager(main_menu)
 
 # ---------- Подменю прошивки ----------
-def make_flash_type_menu(manager, version):
-    tiles = [
-        Tile(label="FULL", callback=stub_action(f"FLASH {version} FULL")),
-        Tile(label="LIGHT", callback=stub_action(f"FLASH {version} LIGHT")),
-        Tile(label="DEBUG", callback=stub_action(f"FLASH {version} DEBUG")),
-        Tile(label="Назад", callback=lambda: manager.back())
+def make_flash_type_menu(manager, version_dir):
+    """Меню выбора типа прошивки (по файлам *_0x9000.bin внутри выбранной папки)."""
+    base_path = os.path.join("/root/smart_programmer/firmware", version_dir)
+
+    # Ищем все файлы, которые оканчиваются на "_0x9000.bin"
+    bin_files = [
+        f for f in os.listdir(base_path)
+        if f.endswith("_0x9000.bin") and os.path.isfile(os.path.join(base_path, f))
     ]
+
+    if not bin_files:
+        print(f"⚠ В папке {base_path} нет подходящих файлов прошивки")
+
+    # Формируем список плиток
+    tiles = []
+    for fname in bin_files:
+        short_name = fname.replace("_0x9000.bin", "")  # для более короткого отображения
+        tiles.append(Tile(label=short_name, callback=stub_action(f"FLASH {version_dir}/{fname}")))
+
+    # Добавляем кнопку "Назад"
+    tiles.append(Tile(label="⬅ Назад", callback=lambda: manager.back()))
+
     return TileScreen(tiles)
 
+
 def open_flash_version_menu(manager):
+    """Меню выбора версии прошивки (по папкам)."""
     base_path = "/root/smart_programmer/firmware"
-    #versions = ["v1.0.0", "v1.1.0", "v1.2.0"]
-    versions = [f for f in os.listdir(base_path)
-                   if os.path.isdir(os.path.join(base_path, f))]
+
+    # Список папок-версий
+    versions = [
+        f for f in os.listdir(base_path)
+        if os.path.isdir(os.path.join(base_path, f))
+    ]
     versions.sort(reverse=True)
 
     tiles = []
 
+    # Кнопка "Назад"
     tiles.append(Tile(icon=BACK_icon, callback=lambda: manager.back(), name="Назад"))
+
+    # Кнопки для каждой версии (открывают make_flash_type_menu)
     for ver in versions:
-        tiles.append(Tile(label=ver, callback=lambda v=ver: manager.open(make_flash_type_menu(manager, v))))
-    tiles.append(Tile(icon=DLOAD_icon, callback=lambda: download_latest_firmware(), name="Обновить версию прошивки"))
+        tiles.append(
+            Tile(label=ver, callback=lambda v=ver: manager.open(make_flash_type_menu(manager, v)))
+        )
+
+    # Кнопка "Обновить прошивки"
+    tiles.append(Tile(icon=DLOAD_icon, callback=lambda: download_latest_firmware(), name="Обновить прошивку"))
 
     manager.open(TileScreen(tiles))
 

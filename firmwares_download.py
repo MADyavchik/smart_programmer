@@ -10,7 +10,7 @@ os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
 def download_latest_firmware():
     try:
-        cleanup_old_firmwares(DOWNLOAD_DIR, keep=3)
+
         response = requests.get(SERVER_URL)
         response.raise_for_status()
         data = response.json()
@@ -65,6 +65,8 @@ def download_latest_firmware():
             print(f"🗑 Удалено: {local_path}")
 
             saved_paths.append(extract_dir)
+
+            cleanup_old_firmwares(DOWNLOAD_DIR, keep=3)
 
         return saved_paths
 
