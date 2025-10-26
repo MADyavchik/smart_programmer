@@ -281,10 +281,10 @@ def open_flash_version_menu(manager):
 
     tiles = []
 
-    tiles.append(Tile(icon=BACK_icon, callback=lambda: manager.back()))
+    tiles.append(Tile(icon=BACK_icon, callback=lambda: manager.back(), name="Назад"))
     for ver in versions:
         tiles.append(Tile(label=ver, callback=lambda v=ver: manager.open(make_flash_type_menu(manager, v))))
-    tiles.append(Tile(icon=DLOAD_icon, callback=lambda: manager.back()))
+    tiles.append(Tile(icon=DLOAD_icon, callback=lambda: manager.back(), name="Загрузка последней версии прошивки"))
 
     manager.open(TileScreen(tiles))
 
