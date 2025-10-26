@@ -42,14 +42,14 @@ TILE_H = AVAILABLE_H // ROWS
 BG_COLOR = (0, 0, 0)
 TILE_COLOR = (180, 140, 0)
 SELECTED_COLOR = (255, 220, 0)
-TEXT_COLOR = (255, 255, 255)
+TEXT_COLOR = (0, 0, 0)
 FOOTER_COLOR = (0, 0, 0)
 
 pygame.init()
 pygame.display.set_mode((1, 1))
 surface = pygame.Surface((SCREEN_W, SCREEN_H))
 clock = pygame.time.Clock()
-font = pygame.font.Font(None, 20)
+font = pygame.font.Font(None, 25)
 footer_font = pygame.font.Font(None, FOOTER_H)
 
 # ---------- Классы плиток и экранов ----------
