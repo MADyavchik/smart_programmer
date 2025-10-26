@@ -119,10 +119,10 @@ class TileScreen:
 
         if getattr(current_tile, "dynamic_label_func", None):
             footer_text = current_tile.dynamic_label_func()
+        elif getattr(current_tile, "name", None):
+            footer_text = current_tile.name       # <- name теперь имеет приоритет
         elif current_tile.label:
             footer_text = current_tile.label
-        elif current_tile.icon:
-            footer_text = getattr(current_tile, "name", "Icon")
         else:
             footer_text = ""
 
