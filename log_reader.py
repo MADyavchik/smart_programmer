@@ -1,5 +1,7 @@
 # log_reader.py
+
 import re
+import time
 
 
 # Регулярка для удаления ANSI-последовательностей
@@ -18,24 +20,36 @@ class LogManager:
         self.scroll_index = 0
         self.auto_scroll = True
         self.generator = None
+        self.active = False
+        self._thread = None
 
     # --- Запуск UART чтения ---
     def start(self, port="/dev/ttyS0", baud=115200):
-        self.generator = self._read_logs(port, baud)
+        """Запуск чтения UART в отдельном потоке (пока активен экран)."""
+        import threading
+        self.active = True
+        self._thread = threading.Thread(target=self._reader_loop, args=(port, baud), daemon=True)
+        self._thread.start()
 
-    def _read_logs(self, port, baud):
+    def _reader_loop(self, port, baud):
         try:
             import serial
-            with serial.Serial(port, baud, timeout=0.1) as ser:  # короткий таймаут
-                while True:
-                    if ser.in_waiting:  # проверяем, есть ли данные
+            with serial.Serial(port, baud, timeout=0.1) as ser:
+                while self.active:
+                    if ser.in_waiting:
                         line = ser.readline().decode(errors="ignore").strip()
                         if line:
-                            yield line
+                            self.add_line(line)
                     else:
-                        yield None  # генератор не блокирует цикл
+                        time.sleep(0.05)
         except Exception as e:
-            yield f"Ошибка: {e}"
+            self.add_line(f"Ошибка: {e}")
+
+    def stop(self):
+        """Останавливает чтение при закрытии экрана."""
+        self.active = False
+        if self._thread and self._thread.is_alive():
+            self._thread.join(timeout=0.5)
 
     # --- Чистка от ANSI и мусора ---
     def _clean_line(self, line):

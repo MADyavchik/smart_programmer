@@ -8,6 +8,9 @@ from luma.lcd.device import st7789
 from system_status import BatteryMonitor, WifiMonitor
 from firmwares_download import download_latest_firmware
 from esp_flasher_class import ESPFlasher
+from log_reader import LogManager
+
+
 
 # ---------- Объекты прошивки ESP ----------
 
@@ -262,7 +265,7 @@ BACK_icon = load_icon("back_ico.png")
 main_tiles = [
     Tile(icon=OFF_icon, callback=stub_action("OFF"), name="Выключение"),
     Tile(icon=FLASH_icon, callback=lambda: open_flash_version_menu(manager), name="Меню прошивки"),
-    Tile(icon=LOG_icon, callback=stub_action("LOG"), name="Чтение лога"),
+    Tile(icon=LOG_icon, callback=lambda: open_log_screen(manager), name="Чтение лога"),
     Tile(dynamic_icon_func=wifi_icon_func, dynamic_color_func=wifi_color, callback=stub_action("WIFI"), dynamic_label_func=wifi_text),
     Tile(icon=REB_icon, callback=stub_action("REBOOT"), name="Перезагрузка"),
     Tile(icon=READMAC_icon, callback=stub_action("READ MAC"), name="Считать MAC"),
@@ -415,6 +418,43 @@ def open_flash_version_menu(manager):
     tiles.append(Tile(icon=DLOAD_icon, callback=lambda: download_latest_firmware(), name="Обновить вер.прошивки"))
 
     manager.open(TileScreen(tiles))
+
+def open_log_screen(manager):
+    #from fonts import default_font
+    log_manager = LogManager(font, max_width=SCREEN_W - 20, max_height=VISIBLE_H - FOOTER_H)
+    screen = LogScreen(log_manager, footer_text="UART Log")
+    manager.open(screen)
+
+class LogScreen:
+    def __init__(self, log_manager, footer_text="UART Log"):
+        self.log_manager = log_manager
+        self.footer_text = footer_text
+        self.log_manager.start()  # запуск при входе на экран
+
+    def draw(self, surf):
+        surf.fill((0, 0, 0))
+        visible, line_h = self.log_manager.get_visible()
+        y = 10
+        for line, indent in visible:
+            color = (255, 255, 255)
+            text = font.render(line, True, color)
+            surf.blit(text, (10 if not indent else 25, y))
+            y += line_h
+
+        # футер — как везде
+        footer_rect = pygame.Rect(0, OFFSET_Y + VISIBLE_H - FOOTER_H, SCREEN_W, FOOTER_H)
+        pygame.draw.rect(surf, (0, 0, 0), footer_rect)
+        hint_surf = footer_font.render(self.footer_text, True, (255, 255, 0))
+        surf.blit(hint_surf, hint_surf.get_rect(center=footer_rect.center))
+
+    def handle_input(self, direction):
+        if direction == "UP":
+            self.log_manager.scroll_up()
+        elif direction == "DOWN":
+            self.log_manager.scroll_down()
+        elif direction == "LEFT":
+            manager.back()
+            self.log_manager.stop()  # ⬅️ остановка логгера при выходе
 
 # ---------- GPIO логика ----------
 PIN_TO_KEY = {KEY_UP: "UP", KEY_DOWN: "DOWN", KEY_LEFT: "LEFT", KEY_RIGHT: "RIGHT", KEY_OK: "OK"}
