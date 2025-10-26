@@ -244,6 +244,8 @@ WIFI0_icon = load_icon("wifi0_ico.png")
 WIFI1_icon = load_icon("wifi1_ico.png")
 WIFI2_icon = load_icon("wifi2_ico.png")
 WIFI3_icon = load_icon("wifi3_ico.png")
+DLOAD_icon = load_icon("download_ico.png")
+BACK_icon = load_icon("back_ico.png")
 
 # ---------- Главное меню ----------
 main_tiles = [
@@ -278,9 +280,12 @@ def open_flash_version_menu(manager):
     versions.sort(reverse=True)
 
     tiles = []
+
+    tiles.append(Tile(icon=BACK_icon, callback=lambda: manager.back()))
     for ver in versions:
         tiles.append(Tile(label=ver, callback=lambda v=ver: manager.open(make_flash_type_menu(manager, v))))
-    tiles.append(Tile(label="Назад", callback=lambda: manager.back()))
+    tiles.append(Tile(icon=DLOAD_icon, callback=lambda: manager.back()))
+
     manager.open(TileScreen(tiles))
 
 # ---------- GPIO логика ----------
