@@ -452,6 +452,8 @@ class LogScreen:
             self.log_manager.scroll_up()
         elif direction == "DOWN":
             self.log_manager.scroll_down()
+        elif direction == "RIGHT":
+            self.log_manager.scroll_to_end()
         elif direction == "LEFT":
             manager.back()
             self.log_manager.stop()  # ⬅️ остановка логгера при выходе
