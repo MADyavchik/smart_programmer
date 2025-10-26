@@ -268,7 +268,6 @@ def make_flash_type_menu(manager, version_dir):
     base_path = os.path.join("/root/smart_programmer/firmware", version_dir)
     print(f"[DEBUG] Поиск файлов в: {base_path}")
 
-    # фильтруем только нужные файлы
     markers = ["sw_nws", "sw_a", "lr_a"]
     bin_files = [
         f for f in os.listdir(base_path)
@@ -278,18 +277,20 @@ def make_flash_type_menu(manager, version_dir):
             os.path.isfile(os.path.join(base_path, f))
         )
     ]
-
-    # сортируем для удобства (по алфавиту или иначе)
     bin_files.sort()
 
     tiles = []
-
     # Кнопка "Назад"
     tiles.append(Tile(icon=BACK_icon, callback=lambda: manager.back(), name="Назад"))
-    for f in bin_files:
-        tiles.append(Tile(label=f, callback=stub_action(f"FLASH {version_dir}/{f}")))
 
-    manager.open(TileScreen(tiles))
+    for f in bin_files:
+        # обязательно создаём callback правильно, чтобы не потерять переменную f
+        tiles.append(Tile(label=f, callback=lambda f=f: stub_action(f"FLASH {version_dir}/{f}")()))
+
+    # Создаём экран
+    screen = TileScreen(tiles)
+    manager.open(screen)
+    return screen  # <- возвращаем экран, чтобы было явно
 
 
 def open_flash_version_menu(manager):
