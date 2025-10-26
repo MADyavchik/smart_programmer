@@ -10,6 +10,7 @@ os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
 def download_latest_firmware():
     try:
+        cleanup_old_firmwares(DOWNLOAD_DIR, keep=3)
         response = requests.get(SERVER_URL)
         response.raise_for_status()
         data = response.json()
@@ -27,7 +28,7 @@ def download_latest_firmware():
         firmwares.sort(key=lambda x: version.parse(x["version"]))
 
         # берём последние три
-        last_three = firmwares[-3:]
+        last_three = firmwares[-1:]
         saved_paths = []
 
         for fw in last_three:
@@ -70,3 +71,18 @@ def download_latest_firmware():
     except Exception as e:
         print(f"❌ Ошибка: {e}")
         return []
+
+def cleanup_old_firmwares(base_dir, keep):
+    """Удаляет старые прошивки, оставляя только последние 'keep' версии."""
+    folders = [f for f in os.listdir(base_dir) if os.path.isdir(os.path.join(base_dir, f))]
+    if not folders:
+        return
+
+    # сортируем как версии
+    folders.sort(key=version.parse, reverse=True)
+
+    # старые — всё, кроме первых 'keep'
+    for old in folders[keep:]:
+        path = os.path.join(base_dir, old)
+        print(f"🗑 Удаляем старую прошивку: {old}")
+        os.system(f"rm -rf '{path}'")

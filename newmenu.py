@@ -6,6 +6,7 @@ from PIL import Image
 from luma.core.interface.serial import spi
 from luma.lcd.device import st7789
 from system_status import BatteryMonitor, WifiMonitor
+from firmwares_download import download_latest_firmware
 
 # ---------- Объекты системного статуса ----------
 batt = BatteryMonitor(multiplier=2.0, charge_pin=21)
@@ -284,7 +285,7 @@ def open_flash_version_menu(manager):
     tiles.append(Tile(icon=BACK_icon, callback=lambda: manager.back(), name="Назад"))
     for ver in versions:
         tiles.append(Tile(label=ver, callback=lambda v=ver: manager.open(make_flash_type_menu(manager, v))))
-    tiles.append(Tile(icon=DLOAD_icon, callback=lambda: manager.back(), name="Загрузка последней версии прошивки"))
+    tiles.append(Tile(icon=DLOAD_icon, callback=lambda: download_latest_firmware(), name="Обновить версию прошивки"))
 
     manager.open(TileScreen(tiles))
 
