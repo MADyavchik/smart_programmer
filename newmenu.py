@@ -7,6 +7,16 @@ from luma.core.interface.serial import spi
 from luma.lcd.device import st7789
 from system_status import BatteryMonitor, WifiMonitor
 from firmwares_download import download_latest_firmware
+from esp_flasher_class import ESPFlasher
+
+# ---------- Объекты прошивки ESP ----------
+
+flasher = ESPFlasher(
+    port="/dev/ttyS0",
+    flash_dir="/root/smart_programmer/firmware",
+    boot_pin=24,
+    en_pin=23
+)
 
 # ---------- Объекты системного статуса ----------
 batt = BatteryMonitor(multiplier=2.0, charge_pin=21)
@@ -283,16 +293,30 @@ def make_flash_type_menu(manager, version_dir):
     # Кнопка "Назад"
     tiles.append(Tile(icon=BACK_icon, callback=lambda: manager.back(), name="Назад"))
 
+    # Для каждого файла создаём плитку
     for f in bin_files:
-        short_label = f[:2]  # первые две буквы для отображения на плитке
+        short_label = f[:2]  # первые две буквы для отображения
+        full_path = os.path.join(base_path, f)
+
+        def make_callback(path=full_path):
+            def _():
+                print(f"[FLASH] Начало прошивки {path}")
+                success = flasher.flash_firmware(path)
+                if success:
+                    print("✅ Прошивка завершена успешно!")
+                else:
+                    print("❌ Ошибка прошивки!")
+            return _
+
         tiles.append(
             Tile(
-                label=short_label,                 # то, что видим на плитке
-                name=f,                            # полное имя для footer/логики
-                callback=lambda f=f: stub_action(f"FLASH {version_dir}/{f}")()
+                label=short_label,
+                name=f,
+                callback=make_callback()
             )
         )
-    # Создаём экран
+
+    # Возвращаем экран
     return TileScreen(tiles)
 
 
@@ -319,7 +343,7 @@ def open_flash_version_menu(manager):
         )
 
     # Кнопка "Обновить прошивки"
-    tiles.append(Tile(icon=DLOAD_icon, callback=lambda: download_latest_firmware(), name="Обновить прошивку"))
+    tiles.append(Tile(icon=DLOAD_icon, callback=lambda: download_latest_firmware(), name="Обновить вер.прошивки"))
 
     manager.open(TileScreen(tiles))
 
