@@ -268,7 +268,7 @@ def make_flash_type_menu(manager, version_dir):
     base_path = os.path.join("/root/smart_programmer/firmware", version_dir)
     print(f"[DEBUG] Поиск файлов в: {base_path}")
 
-    markers = ["sw_nws", "sw_a", "lr_a"]
+    markers = ["sw_nws", "sw_a", "lr_a", "nws_a"]
     bin_files = [
         f for f in os.listdir(base_path)
         if (
