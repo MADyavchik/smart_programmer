@@ -345,8 +345,12 @@ def make_flash_type_menu(manager, version_dir):
     def make_callback(full_path):
         def _():
             # 1️⃣ Открываем экран прогресса
+            relative_path = full_path.split("/firmware/")[-1]
+            clean_name = relative_path.replace("_0x9000.bin", "")
+
+            # создаём экран с понятным заголовком
             prog_screen = ProgressScreen(
-                title="Прошивка ESP32",
+                title=f"Прошивка: {clean_name}",
                 footer_text=os.path.basename(full_path)
             )
             manager.open(prog_screen)
@@ -368,7 +372,7 @@ def make_flash_type_menu(manager, version_dir):
                 )
                 prog_screen.finished = True
                 prog_screen.success = success
-                prog_screen.stage = "✅ Готово" if success else "❌ Ошибка"
+                prog_screen.stage = "Готово" if success else "Ошибка"
 
             threading.Thread(target=flash_thread, daemon=True).start()
 
