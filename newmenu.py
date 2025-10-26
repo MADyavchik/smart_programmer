@@ -273,8 +273,56 @@ main_tiles = [
 main_menu = TileScreen(main_tiles)
 manager = ScreenManager(main_menu)
 
+class ProgressScreen:
+    def __init__(self, title="Прошивка...", footer_text=""):
+        self.title = title
+        self.footer_text = footer_text
+        self.progress = 0
+        self.stage = "Подготовка..."
+        self.finished = False
+        self.success = None  # True / False после завершения
+
+    def draw(self, surf_full):
+        # Фон
+        surf_full.fill(BG_COLOR)
+
+        # Заголовок
+        title_surf = font.render(self.title, True, SELECTED_COLOR)
+        surf_full.blit(title_surf, (SCREEN_W // 2 - title_surf.get_width() // 2, OFFSET_Y + 20))
+
+        # Прогрессбар
+        bar_x = 40
+        bar_y = SCREEN_H // 2 - 15
+        bar_w = SCREEN_W - 2 * bar_x
+        bar_h = 30
+
+        pygame.draw.rect(surf_full, (80, 80, 80), (bar_x, bar_y, bar_w, bar_h), border_radius=8)
+        fill_w = int(bar_w * self.progress / 100)
+        pygame.draw.rect(surf_full, (255, 220, 0), (bar_x, bar_y, fill_w, bar_h), border_radius=8)
+
+        # Текст процентов
+        pct = font.render(f"{int(self.progress)}%", True, (255, 255, 255))
+        surf_full.blit(pct, (SCREEN_W // 2 - pct.get_width() // 2, bar_y + bar_h + 10))
+
+        # --- Футер (используем существующую логику от TileScreen) ---
+        footer_rect = pygame.Rect(0, OFFSET_Y + VISIBLE_H - FOOTER_H, SCREEN_W, FOOTER_H)
+        pygame.draw.rect(surf_full, FOOTER_COLOR, footer_rect)
+
+        footer_text = self.stage if self.stage else self.footer_text
+        footer_surf = footer_font.render(footer_text, True, SELECTED_COLOR)
+        footer_rect_text = footer_surf.get_rect(center=footer_rect.center)
+        surf_full.blit(footer_surf, footer_rect_text)
+
+    def handle_input(self, direction):
+        # После завершения — выход по OK
+        if self.finished and direction == "OK":
+            manager.back()
+
 # ---------- Подменю прошивки ----------
 def make_flash_type_menu(manager, version_dir):
+    from esp_flasher_class import ESPFlasher
+    flasher = ESPFlasher(port="/dev/ttyS0")
+
     base_path = os.path.join("/root/smart_programmer/firmware", version_dir)
     print(f"[DEBUG] Поиск файлов в: {base_path}")
 
@@ -293,30 +341,47 @@ def make_flash_type_menu(manager, version_dir):
     # Кнопка "Назад"
     tiles.append(Tile(icon=BACK_icon, callback=lambda: manager.back(), name="Назад"))
 
-    # Для каждого файла создаём плитку
-    for f in bin_files:
-        short_label = f[:2]  # первые две буквы для отображения
-        full_path = os.path.join(base_path, f)
-
-        def make_callback(path=full_path):
-            def _():
-                print(f"[FLASH] Начало прошивки {path}")
-                success = flasher.flash_firmware(path)
-                if success:
-                    print("✅ Прошивка завершена успешно!")
-                else:
-                    print("❌ Ошибка прошивки!")
-            return _
-
-        tiles.append(
-            Tile(
-                label=short_label,
-                name=f,
-                callback=make_callback()
+    # ⚙️ Функция для создания колбэка с прогрессом
+    def make_callback(full_path):
+        def _():
+            # 1️⃣ Открываем экран прогресса
+            prog_screen = ProgressScreen(
+                title="Прошивка ESP32",
+                footer_text=os.path.basename(full_path)
             )
+            manager.open(prog_screen)
+
+            # 2️⃣ Определяем функции для обновления экрана
+            def on_stage(stage):
+                prog_screen.stage = stage
+
+            def on_progress(percent):
+                prog_screen.progress = percent
+
+            # 3️⃣ Запускаем прошивку в отдельном потоке
+            import threading
+            def flash_thread():
+                success = flasher.flash_firmware(
+                    full_path,
+                    on_stage=on_stage,
+                    on_progress=on_progress
+                )
+                prog_screen.finished = True
+                prog_screen.success = success
+                prog_screen.stage = "✅ Готово" if success else "❌ Ошибка"
+
+            threading.Thread(target=flash_thread, daemon=True).start()
+
+        return _
+
+    # Плитки для всех прошивок
+    for f in bin_files:
+        full_path = os.path.join(base_path, f)
+        tiles.append(
+            Tile(label=f[:2], name=f, callback=make_callback(full_path))
         )
 
-    # Возвращаем экран
+    # Создаём экран
     return TileScreen(tiles)
 
 
