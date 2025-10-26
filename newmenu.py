@@ -265,28 +265,31 @@ manager = ScreenManager(main_menu)
 
 # ---------- Подменю прошивки ----------
 def make_flash_type_menu(manager, version_dir):
-    """Меню выбора типа прошивки (по файлам *_0x9000.bin внутри выбранной папки)."""
     base_path = os.path.join("/root/smart_programmer/firmware", version_dir)
+    print(f"[DEBUG] Поиск файлов в: {base_path}")
 
-    # Ищем все файлы, которые оканчиваются на "_0x9000.bin"
+    # фильтруем только нужные файлы
+    markers = ["sw_nws", "sw_a", "lr_a"]
     bin_files = [
         f for f in os.listdir(base_path)
-        if f.endswith("_0x9000.bin") and os.path.isfile(os.path.join(base_path, f))
+        if (
+            f.endswith("_0x9000.bin") and
+            any(marker in f for marker in markers) and
+            os.path.isfile(os.path.join(base_path, f))
+        )
     ]
 
-    if not bin_files:
-        print(f"⚠ В папке {base_path} нет подходящих файлов прошивки")
+    # сортируем для удобства (по алфавиту или иначе)
+    bin_files.sort()
 
-    # Формируем список плиток
     tiles = []
-    for fname in bin_files:
-        short_name = fname.replace("_0x9000.bin", "")  # для более короткого отображения
-        tiles.append(Tile(label=short_name, callback=stub_action(f"FLASH {version_dir}/{fname}")))
 
-    # Добавляем кнопку "Назад"
-    tiles.append(Tile(label="⬅ Назад", callback=lambda: manager.back()))
+    # Кнопка "Назад"
+    tiles.append(Tile(icon=BACK_icon, callback=lambda: manager.back(), name="Назад"))
+    for f in bin_files:
+        tiles.append(Tile(label=f, callback=stub_action(f"FLASH {version_dir}/{f}")))
 
-    return TileScreen(tiles)
+    manager.open(TileScreen(tiles))
 
 
 def open_flash_version_menu(manager):
