@@ -204,7 +204,7 @@ def load_icon(filename, size=(32, 32)):
     img = pygame.transform.smoothscale(img, size)
     return img
 
-def make_dynamic_footer_tile(label, name, action_func):
+def make_dynamic_footer_tile(icon, name, action_func):
     """
     Создаёт Tile с динамическим футером:
     - По умолчанию отображается name
@@ -231,7 +231,7 @@ def make_dynamic_footer_tile(label, name, action_func):
 
         threading.Thread(target=thread_func, daemon=True).start()
 
-    return Tile(label=label, dynamic_label_func=dynamic_label_func, callback=callback)
+    return Tile(icon=icon, dynamic_label_func=dynamic_label_func, callback=callback)
 
 # ---------- Системные функции плиток ----------
 def battery_text():
