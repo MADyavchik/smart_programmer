@@ -1,8 +1,11 @@
+# main.py
 import time
-import pygame
 from PIL import Image
+import pygame
 import RPi.GPIO as GPIO
-from app import manager, device, surface, clock, SCREEN_W, SCREEN_H, BG_COLOR, poll_buttons, wait_release, KEY_OK
+
+# Импортируем из ui.py всё, что нужно
+from ui import manager, device, surface, clock, SCREEN_W, SCREEN_H, BG_COLOR, poll_buttons, wait_release, KEY_OK
 
 def main():
     try:
@@ -25,9 +28,11 @@ def main():
             device.display(img)
 
             clock.tick(30)
+
     finally:
         GPIO.cleanup()
         pygame.quit()
+
 
 if __name__ == "__main__":
     main()

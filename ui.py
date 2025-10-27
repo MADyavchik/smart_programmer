@@ -1,3 +1,4 @@
+# ui.py
 import os
 import time
 import pygame
@@ -507,28 +508,4 @@ def wait_release(pin, timeout=1.0):
     while GPIO.input(pin) == GPIO.LOW and (time.time() - start) < timeout:
         time.sleep(0.01)
 
-# ---------- Главный цикл ----------
-def main():
-    try:
-        while True:
-            key = poll_buttons()
-            if key:
-                manager.current.handle_input(key)
-                if key == "OK":
-                    wait_release(KEY_OK)
-                time.sleep(0.05)
 
-            surface.fill(BG_COLOR)
-            manager.draw(surface)
-
-            raw_str = pygame.image.tobytes(surface, "RGB")
-            img = Image.frombytes("RGB", (SCREEN_W, SCREEN_H), raw_str)
-            device.display(img)
-
-            clock.tick(30)
-    finally:
-        GPIO.cleanup()
-        pygame.quit()
-
-if __name__ == "__main__":
-    main()
