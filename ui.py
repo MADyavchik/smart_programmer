@@ -327,6 +327,18 @@ WIFI3_icon = load_icon("wifi3_ico.png")
 DLOAD_icon = load_icon("download_ico.png")
 BACK_icon = load_icon("back_ico.png")
 
+OFF_tile = make_dynamic_footer_tile(
+    icon=OFF_icon,
+    name="Выключение",
+    action_func=shutdown_action
+)
+
+REB_tile = make_dynamic_footer_tile(
+    icon=REB_icon,
+    name="Перезагрузка",
+    action_func=reboot_action
+)
+
 # ---------- Главное меню ----------
 main_tiles = [
     #Tile(icon=OFF_icon, callback=stub_action("OFF"), name="Выключение"),
