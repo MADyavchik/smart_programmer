@@ -12,6 +12,7 @@ from esp_flasher_class import ESPFlasher
 from log_reader import LogManager
 from system_status import BatteryMonitor, WifiMonitor
 from system_updater import SystemStatusUpdater  # <-- новый файл/класс
+import subprocess
 
 # создаём объекты батареи и WiFi
 batt = BatteryMonitor(multiplier=2.0, charge_pin=21)
@@ -295,11 +296,11 @@ def wifi_color(selected=False):
     return highlight if selected else color
 
 def shutdown_action():
-    os.system("sudo poweroff")
-
+    subprocess.call(["systemctl", "stop", "smart_programmer.service"])
+    subprocess.call(["sudo", "poweroff"])
 def reboot_action():
-    os.system("sudo reboot")
-
+    subprocess.call(["systemctl", "stop", "smart_programmer.service"])
+    subprocess.call(["sudo", "reboot"])
 
 
 # ---------- Иконки ----------
