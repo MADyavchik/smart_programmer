@@ -6,6 +6,20 @@ from PIL import Image
 from luma.core.interface.serial import spi
 from luma.lcd.device import st7789
 from system_status import BatteryMonitor, WifiMonitor
+from firmwares_download import download_latest_firmware
+from esp_flasher_class import ESPFlasher
+from log_reader import LogManager
+
+
+
+# ---------- Объекты прошивки ESP ----------
+
+flasher = ESPFlasher(
+    port="/dev/ttyS0",
+    flash_dir="/root/smart_programmer/firmware",
+    boot_pin=24,
+    en_pin=23
+)
 
 # ---------- Объекты системного статуса ----------
 batt = BatteryMonitor(multiplier=2.0, charge_pin=21)
@@ -42,14 +56,14 @@ TILE_H = AVAILABLE_H // ROWS
 BG_COLOR = (0, 0, 0)
 TILE_COLOR = (180, 140, 0)
 SELECTED_COLOR = (255, 220, 0)
-TEXT_COLOR = (255, 255, 255)
+TEXT_COLOR = (0, 0, 0)
 FOOTER_COLOR = (0, 0, 0)
 
 pygame.init()
 pygame.display.set_mode((1, 1))
 surface = pygame.Surface((SCREEN_W, SCREEN_H))
 clock = pygame.time.Clock()
-font = pygame.font.Font(None, 20)
+font = pygame.font.Font(None, 25)
 footer_font = pygame.font.Font(None, FOOTER_H)
 
 # ---------- Классы плиток и экранов ----------
@@ -118,10 +132,10 @@ class TileScreen:
 
         if getattr(current_tile, "dynamic_label_func", None):
             footer_text = current_tile.dynamic_label_func()
+        elif getattr(current_tile, "name", None):
+            footer_text = current_tile.name       # <- name теперь имеет приоритет
         elif current_tile.label:
             footer_text = current_tile.label
-        elif current_tile.icon:
-            footer_text = getattr(current_tile, "name", "Icon")
         else:
             footer_text = ""
 
@@ -244,12 +258,14 @@ WIFI0_icon = load_icon("wifi0_ico.png")
 WIFI1_icon = load_icon("wifi1_ico.png")
 WIFI2_icon = load_icon("wifi2_ico.png")
 WIFI3_icon = load_icon("wifi3_ico.png")
+DLOAD_icon = load_icon("download_ico.png")
+BACK_icon = load_icon("back_ico.png")
 
 # ---------- Главное меню ----------
 main_tiles = [
     Tile(icon=OFF_icon, callback=stub_action("OFF"), name="Выключение"),
     Tile(icon=FLASH_icon, callback=lambda: open_flash_version_menu(manager), name="Меню прошивки"),
-    Tile(icon=LOG_icon, callback=stub_action("LOG"), name="Чтение лога"),
+    Tile(icon=LOG_icon, callback=lambda: open_log_screen(manager), name="Чтение лога"),
     Tile(dynamic_icon_func=wifi_icon_func, dynamic_color_func=wifi_color, callback=stub_action("WIFI"), dynamic_label_func=wifi_text),
     Tile(icon=REB_icon, callback=stub_action("REBOOT"), name="Перезагрузка"),
     Tile(icon=READMAC_icon, callback=stub_action("READ MAC"), name="Считать MAC"),
@@ -260,23 +276,187 @@ main_tiles = [
 main_menu = TileScreen(main_tiles)
 manager = ScreenManager(main_menu)
 
+class ProgressScreen:
+    def __init__(self, title="Прошивка...", footer_text=""):
+        self.title = title
+        self.footer_text = footer_text
+        self.progress = 0
+        self.stage = "Подготовка..."
+        self.finished = False
+        self.success = None  # True / False после завершения
+
+    def draw(self, surf_full):
+        # Фон
+        surf_full.fill(BG_COLOR)
+
+        # Заголовок
+        title_surf = font.render(self.title, True, SELECTED_COLOR)
+        surf_full.blit(title_surf, (SCREEN_W // 2 - title_surf.get_width() // 2, OFFSET_Y + 20))
+
+        # Прогрессбар
+        bar_x = 40
+        bar_y = SCREEN_H // 2 - 15
+        bar_w = SCREEN_W - 2 * bar_x
+        bar_h = 30
+
+        pygame.draw.rect(surf_full, (80, 80, 80), (bar_x, bar_y, bar_w, bar_h), border_radius=8)
+        fill_w = int(bar_w * self.progress / 100)
+        pygame.draw.rect(surf_full, (255, 220, 0), (bar_x, bar_y, fill_w, bar_h), border_radius=8)
+
+        # Текст процентов
+        pct = font.render(f"{int(self.progress)}%", True, (255, 255, 255))
+        surf_full.blit(pct, (SCREEN_W // 2 - pct.get_width() // 2, bar_y + bar_h + 10))
+
+        # --- Футер (используем существующую логику от TileScreen) ---
+        footer_rect = pygame.Rect(0, OFFSET_Y + VISIBLE_H - FOOTER_H, SCREEN_W, FOOTER_H)
+        pygame.draw.rect(surf_full, FOOTER_COLOR, footer_rect)
+
+        footer_text = self.stage if self.stage else self.footer_text
+        footer_surf = footer_font.render(footer_text, True, SELECTED_COLOR)
+        footer_rect_text = footer_surf.get_rect(center=footer_rect.center)
+        surf_full.blit(footer_surf, footer_rect_text)
+
+    def handle_input(self, direction):
+        # После завершения — выход по OK
+        if self.finished and direction == "OK":
+            manager.back()
+
 # ---------- Подменю прошивки ----------
-def make_flash_type_menu(manager, version):
-    tiles = [
-        Tile(label="FULL", callback=stub_action(f"FLASH {version} FULL")),
-        Tile(label="LIGHT", callback=stub_action(f"FLASH {version} LIGHT")),
-        Tile(label="DEBUG", callback=stub_action(f"FLASH {version} DEBUG")),
-        Tile(label="Назад", callback=lambda: manager.back())
+def make_flash_type_menu(manager, version_dir):
+    from esp_flasher_class import ESPFlasher
+    flasher = ESPFlasher(port="/dev/ttyS0")
+
+    base_path = os.path.join("/root/smart_programmer/firmware", version_dir)
+    print(f"[DEBUG] Поиск файлов в: {base_path}")
+
+    markers = ["sw_nvs_a", "sw_a", "lr_a", "lr_nvs_a"]
+    bin_files = [
+        f for f in os.listdir(base_path)
+        if (
+            f.endswith("_0x9000.bin") and
+            any(marker in f for marker in markers) and
+            os.path.isfile(os.path.join(base_path, f))
+        )
     ]
+    bin_files.sort()
+
+    tiles = []
+    # Кнопка "Назад"
+    tiles.append(Tile(icon=BACK_icon, callback=lambda: manager.back(), name="Назад"))
+
+    # ⚙️ Функция для создания колбэка с прогрессом
+    def make_callback(full_path):
+        def _():
+            # 1️⃣ Открываем экран прогресса
+            relative_path = full_path.split("/firmware/")[-1]
+            clean_name = relative_path.replace("_0x9000.bin", "")
+
+            # создаём экран с понятным заголовком
+            prog_screen = ProgressScreen(
+                title=f"Прошивка: {clean_name}",
+                footer_text=os.path.basename(full_path)
+            )
+            manager.open(prog_screen)
+
+            # 2️⃣ Определяем функции для обновления экрана
+            def on_stage(stage):
+                prog_screen.stage = stage
+
+            def on_progress(percent):
+                prog_screen.progress = percent
+
+            # 3️⃣ Запускаем прошивку в отдельном потоке
+            import threading
+            def flash_thread():
+                success = flasher.flash_firmware(
+                    full_path,
+                    on_stage=on_stage,
+                    on_progress=on_progress
+                )
+                prog_screen.finished = True
+                prog_screen.success = success
+                prog_screen.stage = "Готово" if success else "Ошибка"
+
+            threading.Thread(target=flash_thread, daemon=True).start()
+
+        return _
+
+    # Плитки для всех прошивок
+    for f in bin_files:
+        full_path = os.path.join(base_path, f)
+        tiles.append(
+            Tile(label=f[:2], name=f, callback=make_callback(full_path))
+        )
+
+    # Создаём экран
     return TileScreen(tiles)
 
+
 def open_flash_version_menu(manager):
-    versions = ["v1.0.0", "v1.1.0", "v1.2.0"]
+    """Меню выбора версии прошивки (по папкам)."""
+    base_path = "/root/smart_programmer/firmware"
+
+    # Список папок-версий
+    versions = [
+        f for f in os.listdir(base_path)
+        if os.path.isdir(os.path.join(base_path, f))
+    ]
+    versions.sort(reverse=True)
+
     tiles = []
+
+    # Кнопка "Назад"
+    tiles.append(Tile(icon=BACK_icon, callback=lambda: manager.back(), name="Назад"))
+
+    # Кнопки для каждой версии (открывают make_flash_type_menu)
     for ver in versions:
-        tiles.append(Tile(label=ver, callback=lambda v=ver: manager.open(make_flash_type_menu(manager, v))))
-    tiles.append(Tile(label="Назад", callback=lambda: manager.back()))
+        tiles.append(
+            Tile(label=ver, callback=lambda v=ver: manager.open(make_flash_type_menu(manager, v)))
+        )
+
+    # Кнопка "Обновить прошивки"
+    tiles.append(Tile(icon=DLOAD_icon, callback=lambda: download_latest_firmware(), name="Обновить вер.прошивки"))
+
     manager.open(TileScreen(tiles))
+
+def open_log_screen(manager):
+    #from fonts import default_font
+    log_manager = LogManager(font, max_width=SCREEN_W - 20, max_height=VISIBLE_H - FOOTER_H)
+    screen = LogScreen(log_manager, footer_text="UART Log")
+    manager.open(screen)
+
+class LogScreen:
+    def __init__(self, log_manager, footer_text="UART Log"):
+        self.log_manager = log_manager
+        self.footer_text = footer_text
+        self.log_manager.start()  # запуск при входе на экран
+
+    def draw(self, surf):
+        surf.fill((0, 0, 0))
+        visible, line_h = self.log_manager.get_visible()
+        y = 10
+        for line, indent in visible:
+            color = (255, 255, 255)
+            text = font.render(line, True, color)
+            surf.blit(text, (10 if not indent else 25, y))
+            y += line_h
+
+        # футер — как везде
+        footer_rect = pygame.Rect(0, OFFSET_Y + VISIBLE_H - FOOTER_H, SCREEN_W, FOOTER_H)
+        pygame.draw.rect(surf, (0, 0, 0), footer_rect)
+        hint_surf = footer_font.render(self.footer_text, True, (255, 255, 0))
+        surf.blit(hint_surf, hint_surf.get_rect(center=footer_rect.center))
+
+    def handle_input(self, direction):
+        if direction == "UP":
+            self.log_manager.scroll_up()
+        elif direction == "DOWN":
+            self.log_manager.scroll_down()
+        elif direction == "RIGHT":
+            self.log_manager.scroll_to_end()
+        elif direction == "LEFT":
+            manager.back()
+            self.log_manager.stop()  # ⬅️ остановка логгера при выходе
 
 # ---------- GPIO логика ----------
 PIN_TO_KEY = {KEY_UP: "UP", KEY_DOWN: "DOWN", KEY_LEFT: "LEFT", KEY_RIGHT: "RIGHT", KEY_OK: "OK"}
