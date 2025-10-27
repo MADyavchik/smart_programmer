@@ -32,6 +32,9 @@ def main():
     finally:
         GPIO.cleanup()
         pygame.quit()
+        # остановка потока апдейтера
+        from ui import status_updater
+        status_updater.stop()
 
 
 if __name__ == "__main__":
