@@ -209,26 +209,35 @@ def make_dynamic_footer_tile(icon, name, action_func):
     Создаёт Tile с динамическим футером:
     - По умолчанию отображается name
     - При запуске action_func футер меняется на статус
+    - Одновременные запуски блокируются
     """
-    footer_text = {"current": name}  # mutable объект для хранения состояния
+    import threading
+    import time
+
+    footer_text = {"current": name}  # текущее значение футера
+    lock = threading.Lock()          # блокировка для предотвращения параллельных запусков
 
     def dynamic_label_func():
         return footer_text["current"]
 
     def callback():
-        import threading
+        # пытаемся захватить lock
+        if not lock.acquire(blocking=False):
+            # если уже выполняется другой поток, просто игнорируем нажатие
+            return
 
         def thread_func():
             try:
                 footer_text["current"] = "Обновление запущено..."
                 action_func()  # выполняем основное действие
-                time.sleep(2)
                 footer_text["current"] = "Готово"
+                time.sleep(2)  # показываем "Готово" пару секунд
             except Exception as e:
-                footer_text["current"] = f"Ошибка"
-            # через пару секунд возвращаем к name
-            time.sleep(2)
-            footer_text["current"] = name
+                footer_text["current"] = "Ошибка"
+                time.sleep(2)
+            finally:
+                footer_text["current"] = name  # возвращаем исходный текст
+                lock.release()  # снимаем блокировку
 
         threading.Thread(target=thread_func, daemon=True).start()
 
