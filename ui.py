@@ -447,7 +447,8 @@ def open_settings_menu(manager):
 
         threading.Thread(target=git_thread, daemon=True).start()
 
-    tiles.append(Tile(label="Git Pull", name="Обновить программу", callback=update_program))
+    #tiles.append(Tile(label="Git Pull", name="Обновить программу", callback=update_program))
+    tiles.append(Tile(icon=DLOAD_icon, callback=update_program, name="Обновить версию по"))
 
     manager.open(TileScreen(tiles))
 
