@@ -506,6 +506,7 @@ def open_settings_menu(manager):
                 print("🔄 Обновление программы через Git...")
                 os.system("cd /root/smart_programmer && git pull")
                 print("✅ Обновление завершено!")
+                clean_exit(manager=manager, status_updater=status_updater, restart_app=True)
             except Exception as e:
                 print(f"❌ Ошибка обновления: {e}")
 
