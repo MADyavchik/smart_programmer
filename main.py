@@ -7,6 +7,7 @@ import RPi.GPIO as GPIO
 # Импортируем из ui.py всё, что нужно
 from ui import manager, device, surface, clock, SCREEN_W, SCREEN_H, BG_COLOR, poll_buttons, wait_release, KEY_OK
 
+
 def main():
     try:
         while True:
