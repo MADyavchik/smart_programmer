@@ -296,11 +296,10 @@ def wifi_color(selected=False):
     return highlight if selected else color
 
 def shutdown_action():
-    subprocess.call(["systemctl", "stop", "smart_programmer.service"])
-    subprocess.call(["sudo", "poweroff"])
+    os.system("sudo poweroff")
+
 def reboot_action():
-    subprocess.call(["systemctl", "stop", "smart_programmer.service"])
-    subprocess.call(["sudo", "reboot"])
+    os.system("sudo reboot")
 
 
 # ---------- Иконки ----------
