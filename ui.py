@@ -204,6 +204,35 @@ def load_icon(filename, size=(32, 32)):
     img = pygame.transform.smoothscale(img, size)
     return img
 
+def make_dynamic_footer_tile(label, name, action_func):
+    """
+    Создаёт Tile с динамическим футером:
+    - По умолчанию отображается name
+    - При запуске action_func футер меняется на статус
+    """
+    footer_text = {"current": name}  # mutable объект для хранения состояния
+
+    def dynamic_label_func():
+        return footer_text["current"]
+
+    def callback():
+        import threading
+
+        def thread_func():
+            try:
+                footer_text["current"] = "🔄 Обновление запущено..."
+                action_func()  # выполняем основное действие
+                footer_text["current"] = "✅ Готово"
+            except Exception as e:
+                footer_text["current"] = f"❌ Ошибка: {e}"
+            # через пару секунд возвращаем к name
+            time.sleep(2)
+            footer_text["current"] = name
+
+        threading.Thread(target=thread_func, daemon=True).start()
+
+    return Tile(label=label, dynamic_label_func=dynamic_label_func, callback=callback)
+
 # ---------- Системные функции плиток ----------
 def battery_text():
     percent = status_updater.battery_percent
@@ -447,13 +476,13 @@ def open_settings_menu(manager):
 
         threading.Thread(target=git_thread, daemon=True).start()
 
-    #tiles.append(Tile(label="Git Pull", name="Обновить программу", callback=update_program))
-    tiles.append(Tile(icon=DLOAD_icon, callback=update_program, name="Обновить версию по"))
-
+    tiles.append(
+        make_dynamic_footer_tile(icon=DLOAD_icon, name="Обновить версию по", action_func=update_program)
+    )
     manager.open(TileScreen(tiles))
 
 def open_log_screen(manager):
-    #from fonts import default_font
+
     log_manager = LogManager(font, max_width=SCREEN_W - 20, max_height=VISIBLE_H - FOOTER_H)
     screen = LogScreen(log_manager, footer_text="UART Log")
     manager.open(screen)
