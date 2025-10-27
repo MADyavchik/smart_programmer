@@ -294,6 +294,24 @@ def wifi_color(selected=False):
         highlight = (255, 255, 255)
     return highlight if selected else color
 
+def shutdown_action():
+    os.system("sudo poweroff")
+
+def reboot_action():
+    os.system("sudo reboot")
+
+OFF_tile = make_dynamic_footer_tile(
+    icon=OFF_icon,
+    name="Выключение",
+    action_func=shutdown_action
+)
+
+REB_tile = make_dynamic_footer_tile(
+    icon=REB_icon,
+    name="Перезагрузка",
+    action_func=reboot_action
+)
+
 # ---------- Иконки ----------
 OFF_icon = load_icon("off_ico.png")
 REB_icon = load_icon("reboot_ico.png")
@@ -311,11 +329,13 @@ BACK_icon = load_icon("back_ico.png")
 
 # ---------- Главное меню ----------
 main_tiles = [
-    Tile(icon=OFF_icon, callback=stub_action("OFF"), name="Выключение"),
+    #Tile(icon=OFF_icon, callback=stub_action("OFF"), name="Выключение"),
+    OFF_tile,
     Tile(icon=FLASH_icon, callback=lambda: open_flash_version_menu(manager), name="Меню прошивки"),
     Tile(icon=LOG_icon, callback=lambda: open_log_screen(manager), name="Чтение лога"),
     Tile(dynamic_icon_func=wifi_icon_func, dynamic_color_func=wifi_color, callback=stub_action("WIFI"), dynamic_label_func=wifi_text),
-    Tile(icon=REB_icon, callback=stub_action("REBOOT"), name="Перезагрузка"),
+    #Tile(icon=REB_icon, callback=stub_action("REBOOT"), name="Перезагрузка"),
+    REB_tile,
     Tile(icon=READMAC_icon, callback=stub_action("READ MAC"), name="Считать MAC"),
     Tile(icon=SET_icon, callback=lambda: open_settings_menu(manager), name="Настройки"),  # <- новая плитка,
     Tile(icon=BATT_icon, dynamic_color_func=battery_color, callback=stub_action("BATT"), dynamic_label_func=battery_text)
