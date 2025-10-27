@@ -300,17 +300,7 @@ def shutdown_action():
 def reboot_action():
     os.system("sudo reboot")
 
-OFF_tile = make_dynamic_footer_tile(
-    icon=OFF_icon,
-    name="Выключение",
-    action_func=shutdown_action
-)
 
-REB_tile = make_dynamic_footer_tile(
-    icon=REB_icon,
-    name="Перезагрузка",
-    action_func=reboot_action
-)
 
 # ---------- Иконки ----------
 OFF_icon = load_icon("off_ico.png")
