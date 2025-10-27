@@ -3,13 +3,23 @@ import os
 import time
 import pygame
 import RPi.GPIO as GPIO
-from PIL import Image
+#from PIL import Image
 from luma.core.interface.serial import spi
 from luma.lcd.device import st7789
-from system_status import BatteryMonitor, WifiMonitor
+#from system_status import BatteryMonitor, WifiMonitor
 from firmwares_download import download_latest_firmware
 from esp_flasher_class import ESPFlasher
 from log_reader import LogManager
+from system_status import BatteryMonitor, WifiMonitor
+from system_updater import SystemStatusUpdater  # <-- новый файл/класс
+
+# создаём объекты батареи и WiFi
+batt = BatteryMonitor(multiplier=2.0, charge_pin=21)
+wifi = WifiMonitor(interface="wlan0")
+
+# создаём апдейтера, который будет обновлять данные в отдельном потоке
+status_updater = SystemStatusUpdater(batt, wifi, interval=1.0)
+status_updater.start()
 
 
 
@@ -196,15 +206,13 @@ def load_icon(filename, size=(32, 32)):
 
 # ---------- Системные функции плиток ----------
 def battery_text():
-    voltage = batt.get_voltage()
-    voltage = max(2.8, min(4.0, voltage))
-    percent = int((voltage - 2.8) / (4.0 - 2.8) * 100)
+    percent = status_updater.battery_percent
     return f"{percent}%"
 
+
 def battery_color(selected=False):
-    charging = batt.is_charging()
-    voltage = batt.get_voltage()
-    percent = int((max(2.8, min(4.0, voltage)) - 2.8) / (4.0 - 2.8) * 100)
+    charging = status_updater.battery_charging
+    percent = status_updater.battery_percent
 
     if charging:
         color = (0, 180, 255)
@@ -220,8 +228,8 @@ def battery_color(selected=False):
     return highlight if selected else color
 
 def wifi_icon_func():
-    quality = wifi.get_quality_percent()
-    if quality is None or quality == 0:
+    quality = status_updater.wifi_quality
+    if quality == 0:
         return WIFI0_icon
     elif quality <= 30:
         return WIFI1_icon
@@ -231,15 +239,14 @@ def wifi_icon_func():
         return WIFI3_icon
 
 def wifi_text():
-    ssid = wifi.get_ssid()
-    rssi = wifi.get_signal_level()
-    if ssid is None or rssi is None:
-        return "WiFi: нет соединения"
+    ssid = status_updater.wifi_ssid or "нет сети"
+    rssi = status_updater.wifi_rssi or 0
     return f"{ssid} ({rssi} dBm)"
 
+
 def wifi_color(selected=False):
-    quality = wifi.get_quality_percent()
-    if quality is None or quality == 0:
+    quality = status_updater.wifi_quality
+    if quality == 0:
         color = (180, 50, 50)
         highlight = (255, 80, 80)
     else:
