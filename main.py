@@ -1,16 +1,33 @@
-# This is a sample Python script.
+import time
+import pygame
+from PIL import Image
+import RPi.GPIO as GPIO
+from app import manager, device, surface, clock, SCREEN_W, SCREEN_H, BG_COLOR, poll_buttons, wait_release, KEY_OK
 
-# Press ⌃R to execute it or replace it with your code.
-# Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
+def main():
+    try:
+        while True:
+            # --- Обработка кнопок ---
+            key = poll_buttons()
+            if key:
+                manager.current.handle_input(key)
+                if key == "OK":
+                    wait_release(KEY_OK)
+                time.sleep(0.05)
 
+            # --- Отрисовка UI ---
+            surface.fill(BG_COLOR)
+            manager.draw(surface)
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press ⌘F8 to toggle the breakpoint.
+            # --- Вывод на дисплей ---
+            raw_str = pygame.image.tobytes(surface, "RGB")
+            img = Image.frombytes("RGB", (SCREEN_W, SCREEN_H), raw_str)
+            device.display(img)
 
+            clock.tick(30)
+    finally:
+        GPIO.cleanup()
+        pygame.quit()
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+if __name__ == "__main__":
+    main()
