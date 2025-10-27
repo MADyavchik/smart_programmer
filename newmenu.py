@@ -269,7 +269,7 @@ main_tiles = [
     Tile(dynamic_icon_func=wifi_icon_func, dynamic_color_func=wifi_color, callback=stub_action("WIFI"), dynamic_label_func=wifi_text),
     Tile(icon=REB_icon, callback=stub_action("REBOOT"), name="Перезагрузка"),
     Tile(icon=READMAC_icon, callback=stub_action("READ MAC"), name="Считать MAC"),
-    Tile(icon=SET_icon, callback=stub_action("SET"), name="Настройки"),
+    Tile(icon=SET_icon, callback=lambda: open_settings_menu(manager), name="Настройки"),  # <- новая плитка,
     Tile(icon=BATT_icon, dynamic_color_func=battery_color, callback=stub_action("BATT"), dynamic_label_func=battery_text)
 ]
 
@@ -416,6 +416,30 @@ def open_flash_version_menu(manager):
 
     # Кнопка "Обновить прошивки"
     tiles.append(Tile(icon=DLOAD_icon, callback=lambda: download_latest_firmware(), name="Обновить вер.прошивки"))
+
+    manager.open(TileScreen(tiles))
+
+def open_settings_menu(manager):
+    """Меню настроек."""
+    tiles = []
+
+    # Кнопка "Назад"
+    tiles.append(Tile(icon=BACK_icon, callback=lambda: manager.back(), name="Назад"))
+
+    # Кнопка "Обновить программу через Git"
+    def update_program():
+        import threading
+        def git_thread():
+            try:
+                print("🔄 Обновление программы через Git...")
+                os.system("cd /root/smart_programmer && git pull")
+                print("✅ Обновление завершено!")
+            except Exception as e:
+                print(f"❌ Ошибка обновления: {e}")
+
+        threading.Thread(target=git_thread, daemon=True).start()
+
+    tiles.append(Tile(label="Git Pull", name="Обновить программу", callback=update_program))
 
     manager.open(TileScreen(tiles))
 
