@@ -222,6 +222,7 @@ def make_dynamic_footer_tile(icon, name, action_func):
             try:
                 footer_text["current"] = "Обновление запущено..."
                 action_func()  # выполняем основное действие
+                time.sleep(2)
                 footer_text["current"] = "Готово"
             except Exception as e:
                 footer_text["current"] = f"Ошибка"
