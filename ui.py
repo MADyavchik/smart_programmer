@@ -359,6 +359,12 @@ def wifi_color(selected=False):
         color, highlight = (200, 200, 200), (255, 255, 255)
     return highlight if selected else color
 
+def poweroff_color(selected=False):
+
+    color, highlight = (180, 50, 50), (255, 80, 80)
+
+    return highlight if selected else color
+
 
 
 # ====================================================
@@ -374,7 +380,7 @@ def reboot_action():
 # ---------- Главное меню --------------------------
 # ====================================================
 main_tiles = [
-    Tile(icon=OFF_icon, callback=shutdown_action, name="Выключение"),
+    Tile(icon=OFF_icon, callback=shutdown_action, dynamic_color_func=poweroff_color, name="Выключение"),
     Tile(icon=FLASH_icon, callback=lambda: open_flash_version_menu(manager), name="Меню прошивки"),
     Tile(icon=LOG_icon, callback=lambda: open_log_screen(manager), name="Чтение лога"),
     Tile(dynamic_icon_func=wifi_icon_func, dynamic_color_func=wifi_color, callback=stub_action("WIFI"), dynamic_label_func=wifi_text),
