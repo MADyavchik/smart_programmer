@@ -1,14 +1,31 @@
+# ui.py
 import os
 import time
 import pygame
 import RPi.GPIO as GPIO
-from PIL import Image
+
 from luma.core.interface.serial import spi
 from luma.lcd.device import st7789
-from system_status import BatteryMonitor, WifiMonitor
+
 from firmwares_download import download_latest_firmware
 from esp_flasher_class import ESPFlasher
 from log_reader import LogManager
+from system_status import BatteryMonitor, WifiMonitor
+from system_updater import SystemStatusUpdater  # <-- новый файл/класс
+import threading
+import sys
+from utils import clean_exit
+
+# ---------- Считывание MAC ----------
+_last_mac_address = None  # глобальная переменная для хранения последнего MAC
+
+# создаём объекты батареи и WiFi
+batt = BatteryMonitor(multiplier=2.0, charge_pin=21)
+wifi = WifiMonitor(interface="wlan0")
+
+# создаём апдейтера, который будет обновлять данные в отдельном потоке
+status_updater = SystemStatusUpdater(batt, wifi, interval=1.0)
+status_updater.start()
 
 
 
@@ -193,17 +210,55 @@ def load_icon(filename, size=(32, 32)):
     img = pygame.transform.smoothscale(img, size)
     return img
 
+def make_dynamic_footer_tile(icon, name, action_func):
+    """
+    Создаёт Tile с динамическим футером:
+    - По умолчанию отображается name
+    - При запуске action_func футер меняется на статус
+    - Одновременные запуски блокируются
+    """
+    import threading
+    import time
+
+    footer_text = {"current": name}  # текущее значение футера
+    lock = threading.Lock()          # блокировка для предотвращения параллельных запусков
+
+    def dynamic_label_func():
+        return footer_text["current"]
+
+    def callback():
+        # пытаемся захватить lock
+        if not lock.acquire(blocking=False):
+            # если уже выполняется другой поток, просто игнорируем нажатие
+            return
+
+        def thread_func():
+            try:
+                footer_text["current"] = "Обновление запущено..."
+                action_func()  # выполняем основное действие
+                time.sleep(2)
+                footer_text["current"] = "Готово"
+                time.sleep(2)  # показываем "Готово" пару секунд
+            except Exception as e:
+                footer_text["current"] = "Ошибка"
+                time.sleep(2)
+            finally:
+                footer_text["current"] = name  # возвращаем исходный текст
+                lock.release()  # снимаем блокировку
+
+        threading.Thread(target=thread_func, daemon=True).start()
+
+    return Tile(icon=icon, dynamic_label_func=dynamic_label_func, callback=callback)
+
 # ---------- Системные функции плиток ----------
 def battery_text():
-    voltage = batt.get_voltage()
-    voltage = max(2.8, min(4.0, voltage))
-    percent = int((voltage - 2.8) / (4.0 - 2.8) * 100)
+    percent = status_updater.battery_percent
     return f"{percent}%"
 
+
 def battery_color(selected=False):
-    charging = batt.is_charging()
-    voltage = batt.get_voltage()
-    percent = int((max(2.8, min(4.0, voltage)) - 2.8) / (4.0 - 2.8) * 100)
+    charging = status_updater.battery_charging
+    percent = status_updater.battery_percent
 
     if charging:
         color = (0, 180, 255)
@@ -219,8 +274,8 @@ def battery_color(selected=False):
     return highlight if selected else color
 
 def wifi_icon_func():
-    quality = wifi.get_quality_percent()
-    if quality is None or quality == 0:
+    quality = status_updater.wifi_quality
+    if quality == 0:
         return WIFI0_icon
     elif quality <= 30:
         return WIFI1_icon
@@ -230,21 +285,27 @@ def wifi_icon_func():
         return WIFI3_icon
 
 def wifi_text():
-    ssid = wifi.get_ssid()
-    rssi = wifi.get_signal_level()
-    if ssid is None or rssi is None:
-        return "WiFi: нет соединения"
+    ssid = status_updater.wifi_ssid or "нет сети"
+    rssi = status_updater.wifi_rssi or 0
     return f"{ssid} ({rssi} dBm)"
 
+
 def wifi_color(selected=False):
-    quality = wifi.get_quality_percent()
-    if quality is None or quality == 0:
+    quality = status_updater.wifi_quality
+    if quality == 0:
         color = (180, 50, 50)
         highlight = (255, 80, 80)
     else:
         color = (200, 200, 200)
         highlight = (255, 255, 255)
     return highlight if selected else color
+
+def shutdown_action():
+    clean_exit(manager=manager, status_updater=status_updater, poweroff=True)
+
+def reboot_action():
+    clean_exit(manager=manager, status_updater=status_updater, reboot=True)
+
 
 # ---------- Иконки ----------
 OFF_icon = load_icon("off_ico.png")
@@ -261,15 +322,69 @@ WIFI3_icon = load_icon("wifi3_ico.png")
 DLOAD_icon = load_icon("download_ico.png")
 BACK_icon = load_icon("back_ico.png")
 
+OFF_tile = make_dynamic_footer_tile(
+    icon=OFF_icon,
+    name="Выключение",
+    action_func=shutdown_action
+)
+
+REB_tile = make_dynamic_footer_tile(
+    icon=REB_icon,
+    name="Перезагрузка",
+    action_func=reboot_action
+)
+
+def read_mac_action():
+    """Считывает MAC-адрес с ESP и отображает его в футере."""
+    global _last_mac_address
+
+    def worker():
+        global _last_mac_address
+        print("📡 Считывание MAC с ESP32...")
+        _last_mac_address = "Считывание MAC..."
+        mac = flasher.get_mac_address()
+        if mac:
+            _last_mac_address = mac
+            print(f"✅ MAC-адрес: {mac}")
+        else:
+            _last_mac_address = "Ошибка чтения MAC"
+            print("❌ Ошибка чтения MAC")
+            time.sleep(2)
+            _last_mac_address = None  # вернуть в исходное состояние
+
+    threading.Thread(target=worker, daemon=True).start()
+
+def make_mac_tile():
+    """Создаёт плитку считывания MAC с динамическим футером."""
+    def footer_func():
+        if not _last_mac_address:
+            return "Считать MAC"
+        elif "ошибка" in _last_mac_address.lower():
+            return _last_mac_address
+        elif "считывание" in _last_mac_address.lower():
+            return _last_mac_address
+        else:
+            return f"MAC: {_last_mac_address}"
+
+    return Tile(
+        icon=READMAC_icon,
+        callback=read_mac_action,
+        dynamic_label_func=footer_func,
+        name="Считать MAC"
+    )
+
 # ---------- Главное меню ----------
 main_tiles = [
-    Tile(icon=OFF_icon, callback=stub_action("OFF"), name="Выключение"),
+    Tile(icon=OFF_icon, callback=shutdown_action, name="Выключение"),
+    #OFF_tile,
     Tile(icon=FLASH_icon, callback=lambda: open_flash_version_menu(manager), name="Меню прошивки"),
     Tile(icon=LOG_icon, callback=lambda: open_log_screen(manager), name="Чтение лога"),
     Tile(dynamic_icon_func=wifi_icon_func, dynamic_color_func=wifi_color, callback=stub_action("WIFI"), dynamic_label_func=wifi_text),
-    Tile(icon=REB_icon, callback=stub_action("REBOOT"), name="Перезагрузка"),
-    Tile(icon=READMAC_icon, callback=stub_action("READ MAC"), name="Считать MAC"),
-    Tile(icon=SET_icon, callback=stub_action("SET"), name="Настройки"),
+    Tile(icon=REB_icon, callback=reboot_action, name="Перезагрузка"),
+    #REB_tile,
+    #Tile(icon=READMAC_icon, callback=stub_action("READ MAC"), name="Считать MAC"),
+    make_mac_tile(),
+    Tile(icon=SET_icon, callback=lambda: open_settings_menu(manager), name="Настройки"),  # <- новая плитка,
     Tile(icon=BATT_icon, dynamic_color_func=battery_color, callback=stub_action("BATT"), dynamic_label_func=battery_text)
 ]
 
@@ -419,8 +534,34 @@ def open_flash_version_menu(manager):
 
     manager.open(TileScreen(tiles))
 
+def open_settings_menu(manager):
+    """Меню настроек."""
+    tiles = []
+
+    # Кнопка "Назад"
+    tiles.append(Tile(icon=BACK_icon, callback=lambda: manager.back(), name="Назад"))
+
+    # Кнопка "Обновить программу через Git"
+    def update_program():
+        import threading
+        def git_thread():
+            try:
+                print("🔄 Обновление программы через Git...")
+                os.system("cd /root/smart_programmer && git pull")
+                print("✅ Обновление завершено!")
+                clean_exit(manager=manager, status_updater=status_updater, restart_app=True)
+            except Exception as e:
+                print(f"❌ Ошибка обновления: {e}")
+
+        threading.Thread(target=git_thread, daemon=True).start()
+
+    tiles.append(
+        make_dynamic_footer_tile(icon=DLOAD_icon, name="Обновить версию по", action_func=update_program)
+    )
+    manager.open(TileScreen(tiles))
+
 def open_log_screen(manager):
-    #from fonts import default_font
+
     log_manager = LogManager(font, max_width=SCREEN_W - 20, max_height=VISIBLE_H - FOOTER_H)
     screen = LogScreen(log_manager, footer_text="UART Log")
     manager.open(screen)
@@ -458,6 +599,12 @@ class LogScreen:
             manager.back()
             self.log_manager.stop()  # ⬅️ остановка логгера при выходе
 
+
+
+
+
+
+
 # ---------- GPIO логика ----------
 PIN_TO_KEY = {KEY_UP: "UP", KEY_DOWN: "DOWN", KEY_LEFT: "LEFT", KEY_RIGHT: "RIGHT", KEY_OK: "OK"}
 last_pin_state = {pin: True for pin in PIN_TO_KEY}
@@ -482,29 +629,3 @@ def wait_release(pin, timeout=1.0):
     start = time.time()
     while GPIO.input(pin) == GPIO.LOW and (time.time() - start) < timeout:
         time.sleep(0.01)
-
-# ---------- Главный цикл ----------
-def main():
-    try:
-        while True:
-            key = poll_buttons()
-            if key:
-                manager.current.handle_input(key)
-                if key == "OK":
-                    wait_release(KEY_OK)
-                time.sleep(0.05)
-
-            surface.fill(BG_COLOR)
-            manager.draw(surface)
-
-            raw_str = pygame.image.tobytes(surface, "RGB")
-            img = Image.frombytes("RGB", (SCREEN_W, SCREEN_H), raw_str)
-            device.display(img)
-
-            clock.tick(30)
-    finally:
-        GPIO.cleanup()
-        pygame.quit()
-
-if __name__ == "__main__":
-    main()
