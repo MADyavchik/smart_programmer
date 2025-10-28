@@ -629,3 +629,65 @@ def wait_release(pin, timeout=1.0):
     start = time.time()
     while GPIO.input(pin) == GPIO.LOW and (time.time() - start) < timeout:
         time.sleep(0.01)
+
+
+# ==================== WIFI MONITOR ==================== #
+class WifiMonitor:
+    def __init__(self, interface="wlan0", cache_time=2.0):
+        """
+        interface: имя WiFi-интерфейса
+        cache_time: минимальный интервал обновления данных (сек)
+        """
+        self.interface = interface
+        self.cache_time = cache_time
+        self._last_update = 0
+        self._cached_rssi = None
+        self._cached_quality = None
+        self._cached_ssid = None
+
+    def _update_data(self):
+        """Читает данные WiFi через iwconfig, если кэш устарел"""
+        now = time.time()
+        if now - self._last_update < self.cache_time:
+            return  # используем кэш
+
+        try:
+            # RSSI и качество
+            result = subprocess.run(
+                ["iwconfig", self.interface],
+                capture_output=True,
+                text=True
+            )
+            rssi, quality = None, None
+            for line in result.stdout.splitlines():
+                if "Link Quality" in line:
+                    parts = line.split()
+                    for part in parts:
+                        if "Quality=" in part or "Link" in part:
+                            qstr = part.split("=")[-1]
+                            if "/" in qstr:
+                                num, denom = qstr.split("/")
+                                quality = int(int(num) / int(denom) * 100)
+                        elif "level=" in part:
+                            try:
+                                rssi = int(part.split("=")[1].replace("dBm", ""))
+                            except:
+                                pass
+            self._cached_rssi = rssi
+            self._cached_quality = quality
+
+            # SSID
+            try:
+                ssid_result = subprocess.run(
+                    ["iwgetid", "-r", self.interface],
+                    capture_output=True, text=True
+                )
+                self._cached_ssid = ssid_result.stdout.strip() or None
+            except Exception:
+                self._cached_ssid = None
+
+            self._last_update = now
+        except Exception:
+            self._cached_rssi = None
+            self._cached_quality = None
+            self._cached_ssid = None

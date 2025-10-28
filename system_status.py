@@ -48,11 +48,7 @@ class BatteryMonitor:
 
 # ==================== WIFI MONITOR ==================== #
 class WifiMonitor:
-    def __init__(self, interface="wlan0", cache_time=2.0):
-        """
-        interface: имя WiFi-интерфейса
-        cache_time: минимальный интервал обновления данных (сек)
-        """
+    def __init__(self, interface="wlan0", cache_time=10.0):
         self.interface = interface
         self.cache_time = cache_time
         self._last_update = 0
@@ -61,69 +57,37 @@ class WifiMonitor:
         self._cached_ssid = None
 
     def _update_data(self):
-        """Читает данные WiFi через iwconfig, если кэш устарел"""
         now = time.time()
         if now - self._last_update < self.cache_time:
-            return  # используем кэш
+            return
 
         try:
-            # RSSI и качество
+            # Читаем RSSI и качество сигнала из /proc/net/wireless
+            with open("/proc/net/wireless", "r") as f:
+                for line in f:
+                    if self.interface in line:
+                        parts = line.split()
+                        quality = float(parts[2].replace(".", ""))
+                        rssi = int(float(parts[3]))
+                        self._cached_quality = int(quality / 70 * 100)
+                        self._cached_rssi = rssi
+                        break
+
+            # Получаем SSID только если нужно
             result = subprocess.run(
-                ["iwconfig", self.interface],
-                capture_output=True,
-                text=True
+                ["iwgetid", "-r", self.interface],
+                capture_output=True, text=True
             )
-            rssi, quality = None, None
-            for line in result.stdout.splitlines():
-                if "Link Quality" in line:
-                    parts = line.split()
-                    for part in parts:
-                        if "Quality=" in part or "Link" in part:
-                            qstr = part.split("=")[-1]
-                            if "/" in qstr:
-                                num, denom = qstr.split("/")
-                                quality = int(int(num) / int(denom) * 100)
-                        elif "level=" in part:
-                            try:
-                                rssi = int(part.split("=")[1].replace("dBm", ""))
-                            except:
-                                pass
-            self._cached_rssi = rssi
-            self._cached_quality = quality
+            self._cached_ssid = result.stdout.strip() or "—"
 
-            # SSID
-            try:
-                ssid_result = subprocess.run(
-                    ["iwgetid", "-r", self.interface],
-                    capture_output=True, text=True
-                )
-                self._cached_ssid = ssid_result.stdout.strip() or None
-            except Exception:
-                self._cached_ssid = None
-
-            self._last_update = now
         except Exception:
-            self._cached_rssi = None
             self._cached_quality = None
+            self._cached_rssi = None
             self._cached_ssid = None
 
-    def get_signal_level(self) -> int | None:
-        """Возвращает уровень сигнала WiFi (RSSI, dBm)"""
-        self._update_data()
-        return self._cached_rssi
+        self._last_update = now
 
-    def get_quality_percent(self) -> int | None:
-        """Возвращает качество сигнала (0–100 %)"""
-        self._update_data()
-        return self._cached_quality
-
-    def get_ssid(self) -> str | None:
-        """Возвращает SSID текущей WiFi сети"""
-        self._update_data()
-        return self._cached_ssid
-
-    def get_status_text(self) -> str:
-        """Возвращает строку для отображения статуса WiFi"""
+    def get_status_text(self):
         self._update_data()
         if self._cached_quality is None:
             return "📶 WiFi: нет соединения"
