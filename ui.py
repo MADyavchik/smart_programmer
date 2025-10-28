@@ -365,6 +365,12 @@ def poweroff_color(selected=False):
 
     return highlight if selected else color
 
+def reboot_color(selected=False):
+
+    color, highlight = (0, 180, 255), (0, 220, 255)
+
+    return highlight if selected else color
+
 
 
 # ====================================================
@@ -384,7 +390,7 @@ main_tiles = [
     Tile(icon=FLASH_icon, callback=lambda: open_flash_version_menu(manager), name="Меню прошивки"),
     Tile(icon=LOG_icon, callback=lambda: open_log_screen(manager), name="Чтение лога"),
     Tile(dynamic_icon_func=wifi_icon_func, dynamic_color_func=wifi_color, callback=stub_action("WIFI"), dynamic_label_func=wifi_text),
-    Tile(icon=REB_icon, callback=reboot_action, name="Перезагрузка"),
+    Tile(icon=REB_icon, callback=reboot_action, dynamic_color_func=reboot_color, name="Перезагрузка"),
     make_mac_tile(),
     Tile(icon=SET_icon, callback=lambda: open_settings_menu(manager), name="Настройки"),
     Tile(icon=BATT_icon, dynamic_color_func=battery_color, callback=stub_action("BATT"), dynamic_label_func=battery_text)
