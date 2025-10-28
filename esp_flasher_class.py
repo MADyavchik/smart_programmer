@@ -49,7 +49,7 @@ class ESPFlasher:
     # ===== Чтение MAC-адреса =====
     def get_mac_address(self):
         try:
-            self.enter_bootloader()
+            self.enter_bootloader(self.boot_pin, self.en_pin)
             result = subprocess.run(
                 ["esptool.py", "--chip", "esp32", "-p", self.port, "read_mac"],
                 stdout=subprocess.PIPE,
@@ -62,13 +62,13 @@ class ESPFlasher:
                 mac = mac_line.split("MAC:")[1].strip()
                 self.mac_address = mac.lower()
                 logging.info(f"✅ MAC-адрес: {self.mac_address}")
-                self.exit_bootloader()
+                self.exit_bootloader(self.boot_pin, self.en_pin)
                 return self.mac_address
             else:
                 raise Exception("MAC-адрес не найден")
         except Exception as e:
             logging.error(f"❌ Ошибка получения MAC: {e}")
-            self.exit_bootloader_func()
+            self.exit_bootloader(self.boot_pin, self.en_pin)
             return None
 
     # ===== Прошивка =====
