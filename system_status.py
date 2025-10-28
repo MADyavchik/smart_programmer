@@ -56,6 +56,21 @@ class WifiMonitor:
         self._cached_quality = None
         self._cached_ssid = None
 
+    def get_quality_percent(self):
+        """Возвращает качество сигнала (0–100 %)"""
+        self._update_data()
+        return self._cached_quality
+
+    def get_signal_level(self):
+        """Возвращает уровень сигнала (RSSI, dBm)"""
+        self._update_data()
+        return self._cached_rssi
+
+    def get_ssid(self):
+        """Возвращает SSID текущей сети"""
+        self._update_data()
+        return self._cached_ssid
+
     def _update_data(self):
         now = time.time()
         if now - self._last_update < self.cache_time:
@@ -73,10 +88,11 @@ class WifiMonitor:
                         self._cached_rssi = rssi
                         break
 
-            # Получаем SSID только если нужно
+            # Получаем SSID
             result = subprocess.run(
                 ["iwgetid", "-r", self.interface],
-                capture_output=True, text=True
+                capture_output=True,
+                text=True
             )
             self._cached_ssid = result.stdout.strip() or "—"
 
