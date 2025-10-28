@@ -367,7 +367,7 @@ def poweroff_color(selected=False):
 
 def reboot_color(selected=False):
 
-    color, highlight = (0, 70, 160), (0, 100, 190)
+    color, highlight = (0, 70, 160), (0, 130, 200)
 
     return highlight if selected else color
 
