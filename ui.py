@@ -352,7 +352,7 @@ def read_mac_action():
             time.sleep(2)
             _last_mac_address = None  # вернуть в исходное состояние
 
-        threading.Thread(target=worker, daemon=True).start()
+    threading.Thread(target=worker, daemon=True).start()
 
 def make_mac_tile():
     """Создаёт плитку считывания MAC с динамическим футером."""
