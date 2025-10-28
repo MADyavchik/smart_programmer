@@ -16,6 +16,9 @@ import threading
 import sys
 from utils import clean_exit
 
+# ---------- Считывание MAC ----------
+_last_mac_address = None  # глобальная переменная для хранения последнего MAC
+
 # создаём объекты батареи и WiFi
 batt = BatteryMonitor(multiplier=2.0, charge_pin=21)
 wifi = WifiMonitor(interface="wlan0")
@@ -331,6 +334,23 @@ REB_tile = make_dynamic_footer_tile(
     action_func=reboot_action
 )
 
+def read_mac_action():
+    """Считывает MAC-адрес с ESP и отображает его в футере."""
+    global _last_mac_address
+
+    def worker():
+        global _last_mac_address
+        print("📡 Считывание MAC с ESP32...")
+        mac = flasher.get_mac_address()
+        if mac:
+            _last_mac_address = mac
+            print(f"✅ MAC-адрес: {mac}")
+        else:
+            _last_mac_address = "Ошибка чтения MAC"
+            print("❌ Ошибка чтения MAC")
+
+    threading.Thread(target=worker, daemon=True).start()
+
 def make_mac_tile():
     """Создаёт плитку считывания MAC с динамическим футером."""
     def footer_func():
@@ -569,25 +589,9 @@ class LogScreen:
             manager.back()
             self.log_manager.stop()  # ⬅️ остановка логгера при выходе
 
-# ---------- Считывание MAC ----------
-_last_mac_address = None  # глобальная переменная для хранения последнего MAC
 
-def read_mac_action():
-    """Считывает MAC-адрес с ESP и отображает его в футере."""
-    global _last_mac_address
 
-    def worker():
-        global _last_mac_address
-        print("📡 Считывание MAC с ESP32...")
-        mac = flasher.get_mac_address()
-        if mac:
-            _last_mac_address = mac
-            print(f"✅ MAC-адрес: {mac}")
-        else:
-            _last_mac_address = "Ошибка чтения MAC"
-            print("❌ Ошибка чтения MAC")
 
-    threading.Thread(target=worker, daemon=True).start()
 
 
 
