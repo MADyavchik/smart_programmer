@@ -18,8 +18,8 @@ class ESPFlasher:
         self.mac_address = None
 
 
-        GPIO.setwarnings(False)   # Чтобы убрать предупреждения
-        GPIO.setmode(GPIO.BCM)
+        if GPIO.getmode() is None:
+            GPIO.setmode(GPIO.BCM)
 
         GPIO.setup(self.boot_pin, GPIO.OUT, initial=GPIO.HIGH)
         GPIO.setup(self.en_pin, GPIO.OUT, initial=GPIO.HIGH)
