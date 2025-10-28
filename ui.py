@@ -356,7 +356,7 @@ def wifi_color(selected=False):
     if quality == 0:
         color, highlight = (180, 50, 50), (255, 80, 80)
     else:
-        color, highlight = (200, 200, 200), (255, 255, 255)
+        color, highlight = (0, 200, 0), (0, 255, 0)
     return highlight if selected else color
 
 def poweroff_color(selected=False):
