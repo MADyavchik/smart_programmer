@@ -331,7 +331,7 @@ def battery_color(selected=False):
     charging = status_updater.battery_charging
     percent = status_updater.battery_percent
     if charging:
-        color, highlight = (0, 70, 160), (0, 130, 200)
+        color, highlight = (0, 130, 200), (0, 220, 255)
     else:
         if percent <= 20:
             color, highlight = (180, 50, 50), (255, 80, 80)
@@ -367,7 +367,7 @@ def poweroff_color(selected=False):
 
 def reboot_color(selected=False):
 
-    color, highlight = (0, 70, 160), (0, 130, 200)
+    color, highlight = (0, 130, 200), (0, 220, 255)
 
     return highlight if selected else color
 
