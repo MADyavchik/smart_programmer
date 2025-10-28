@@ -341,7 +341,7 @@ def read_mac_action():
     def worker():
         global _last_mac_address
         print("📡 Считывание MAC с ESP32...")
-        _last_mac_address = "считывание ..."  # 🔄 показываем статус в UI
+        _last_mac_address = "Cчитывание MAC ..."  # 🔄 показываем статус в UI
 
         mac = flasher.get_mac_address()
 
@@ -361,7 +361,7 @@ def make_mac_tile():
             return "Считать MAC"
         elif _last_mac_address.lower().startswith("ошибка"):
             return _last_mac_address
-        elif "считывание ..." in _last_mac_address.lower():
+        elif "считывание" in _last_mac_address.lower():
             return _last_mac_address
         else:
             return f"MAC: {_last_mac_address}"
