@@ -350,6 +350,9 @@ def read_mac_action():
             print(f"✅ MAC-адрес: {mac}")
         else:
             _last_mac_address = "Ошибка чтения MAC"
+            time.sleep(1)
+            _last_mac_address = "Считать MAC"
+
             print("❌ Ошибка чтения MAC")
 
     threading.Thread(target=worker, daemon=True).start()
