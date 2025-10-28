@@ -341,28 +341,25 @@ def read_mac_action():
     def worker():
         global _last_mac_address
         print("📡 Считывание MAC с ESP32...")
-        _last_mac_address = "cчитывание..."  # 🔄 показываем статус в UI
-
+        _last_mac_address = "Считывание MAC..."
         mac = flasher.get_mac_address()
-
         if mac:
             _last_mac_address = mac
             print(f"✅ MAC-адрес: {mac}")
         else:
             _last_mac_address = "Ошибка чтения MAC"
-            time.sleep(1)
-            _last_mac_address = "Считать MAC"
-
             print("❌ Ошибка чтения MAC")
+            time.sleep(2)
+            _last_mac_address = None  # вернуть в исходное состояние
 
-    threading.Thread(target=worker, daemon=True).start()
+        threading.Thread(target=worker, daemon=True).start()
 
 def make_mac_tile():
     """Создаёт плитку считывания MAC с динамическим футером."""
     def footer_func():
         if not _last_mac_address:
             return "Считать MAC"
-        elif _last_mac_address.lower().startswith("ошибка"):
+        elif "ошибка" in _last_mac_address.lower():
             return _last_mac_address
         elif "считывание" in _last_mac_address.lower():
             return _last_mac_address
