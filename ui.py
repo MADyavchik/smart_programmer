@@ -359,11 +359,7 @@ def wifi_color(selected=False):
         color, highlight = (200, 200, 200), (255, 255, 255)
     return highlight if selected else color
 
-def poweroff_color(selected=False):
 
-    color, highlight = (180, 50, 50), (255, 80, 80)
-
-    return highlight if selected else color
 
 # ====================================================
 # ---------- Действия плиток -----------------------
