@@ -341,7 +341,7 @@ def read_mac_action():
     def worker():
         global _last_mac_address
         print("📡 Считывание MAC с ESP32...")
-        _last_mac_address = "Cчитывание MAC ..."  # 🔄 показываем статус в UI
+        _last_mac_address = "cчитывание..."  # 🔄 показываем статус в UI
 
         mac = flasher.get_mac_address()
 
