@@ -3,10 +3,10 @@ import os
 import time
 import pygame
 import RPi.GPIO as GPIO
-#from PIL import Image
+
 from luma.core.interface.serial import spi
 from luma.lcd.device import st7789
-#from system_status import BatteryMonitor, WifiMonitor
+
 from firmwares_download import download_latest_firmware
 from esp_flasher_class import ESPFlasher
 from log_reader import LogManager
@@ -331,6 +331,18 @@ REB_tile = make_dynamic_footer_tile(
     action_func=reboot_action
 )
 
+def make_mac_tile():
+    """Создаёт плитку считывания MAC с динамическим футером."""
+    def footer_func():
+        return _last_mac_address or "Считать MAC"
+
+    return Tile(
+        icon=READMAC_icon,
+        callback=read_mac_action,
+        dynamic_label_func=footer_func,
+        name="Считать MAC"
+    )
+
 # ---------- Главное меню ----------
 main_tiles = [
     Tile(icon=OFF_icon, callback=shutdown_action, name="Выключение"),
@@ -340,7 +352,8 @@ main_tiles = [
     Tile(dynamic_icon_func=wifi_icon_func, dynamic_color_func=wifi_color, callback=stub_action("WIFI"), dynamic_label_func=wifi_text),
     Tile(icon=REB_icon, callback=reboot_action, name="Перезагрузка"),
     #REB_tile,
-    Tile(icon=READMAC_icon, callback=stub_action("READ MAC"), name="Считать MAC"),
+    #Tile(icon=READMAC_icon, callback=stub_action("READ MAC"), name="Считать MAC"),
+    make_mac_tile(),
     Tile(icon=SET_icon, callback=lambda: open_settings_menu(manager), name="Настройки"),  # <- новая плитка,
     Tile(icon=BATT_icon, dynamic_color_func=battery_color, callback=stub_action("BATT"), dynamic_label_func=battery_text)
 ]
@@ -555,6 +568,28 @@ class LogScreen:
         elif direction == "LEFT":
             manager.back()
             self.log_manager.stop()  # ⬅️ остановка логгера при выходе
+
+# ---------- Считывание MAC ----------
+_last_mac_address = None  # глобальная переменная для хранения последнего MAC
+
+def read_mac_action():
+    """Считывает MAC-адрес с ESP и отображает его в футере."""
+    global _last_mac_address
+
+    def worker():
+        global _last_mac_address
+        print("📡 Считывание MAC с ESP32...")
+        mac = flasher.get_mac_address()
+        if mac:
+            _last_mac_address = mac
+            print(f"✅ MAC-адрес: {mac}")
+        else:
+            _last_mac_address = "Ошибка чтения MAC"
+            print("❌ Ошибка чтения MAC")
+
+    threading.Thread(target=worker, daemon=True).start()
+
+
 
 # ---------- GPIO логика ----------
 PIN_TO_KEY = {KEY_UP: "UP", KEY_DOWN: "DOWN", KEY_LEFT: "LEFT", KEY_RIGHT: "RIGHT", KEY_OK: "OK"}
