@@ -354,7 +354,14 @@ def read_mac_action():
 def make_mac_tile():
     """Создаёт плитку считывания MAC с динамическим футером."""
     def footer_func():
-        return f"MAC: {_last_mac_address}" if _last_mac_address else "Считать MAC"
+        if not _last_mac_address:
+            return "Считать MAC"
+        elif _last_mac_address.lower().startswith("ошибка"):
+            return _last_mac_address
+        elif "считывание" in _last_mac_address.lower():
+            return _last_mac_address
+        else:
+            return f"MAC: {_last_mac_address}"
 
     return Tile(
         icon=READMAC_icon,
