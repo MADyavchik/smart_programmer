@@ -354,7 +354,7 @@ def read_mac_action():
 def make_mac_tile():
     """Создаёт плитку считывания MAC с динамическим футером."""
     def footer_func():
-        return _last_mac_address or "Считать MAC"
+        return f"MAC: {_last_mac_address}" if _last_mac_address else "Считать MAC"
 
     return Tile(
         icon=READMAC_icon,
