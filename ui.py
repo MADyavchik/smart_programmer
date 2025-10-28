@@ -331,7 +331,7 @@ def battery_color(selected=False):
     charging = status_updater.battery_charging
     percent = status_updater.battery_percent
     if charging:
-        color, highlight = (0, 180, 255), (0, 220, 255)
+        color, highlight = (0, 70, 160), (0, 130, 200)
     else:
         if percent <= 20:
             color, highlight = (180, 50, 50), (255, 80, 80)
