@@ -154,8 +154,8 @@ class ESPFlasher:
                     total_percent = start_percent + firmware_percent / 100 * stage_range
                     on_progress(total_percent)
 
-                 # ловим MAC
-                mac_match = re.search(r"MAC: ([0-9A-Fa-f:]{17})", line)
+                # ловим MAC
+                mac_match = re.search(r"\b[Mm][Aa][Cc]:\s*([0-9A-Fa-f:]{2}(:[0-9A-Fa-f]{2}){5})\b", line)
                 if mac_match and on_mac:
                     mac_address = mac_match.group(1).lower()
                     on_mac(mac_address)
