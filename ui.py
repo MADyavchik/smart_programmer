@@ -482,8 +482,8 @@ def make_flash_type_menu(manager, version_dir):
             # Колбэк для MAC, найденного в логах прошивки
             def on_mac(mac):
                 if mac:
-                    log_mac_locally(mac, firmware_version=firmware_version, firmware_type=firmware_type)
-                    print(f"✅ MAC из лога прошивки: {mac} (v:{firmware_version}, type:{firmware_type})")
+                    log_mac_locally(mac, firmware_version=relative_path, firmware_type=clean_name)
+                    print(f"✅ MAC из лога прошивки: {mac} (v:{relative_path}, type:{clean_name})")
                 else:
                     print("❌ Не удалось найти MAC в логе прошивки")
 
