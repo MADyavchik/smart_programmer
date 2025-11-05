@@ -14,7 +14,7 @@ from esp_flasher_class import ESPFlasher
 from log_reader import LogManager
 from system_status import BatteryMonitor, WifiMonitor
 from system_updater import SystemStatusUpdater  # класс апдейтера статуса
-from utils import clean_exit, log_mac_locally
+from utils import clean_exit, log_mac_locally, sync_mac_log_with_google
 
 
 # ====================================================
@@ -515,6 +515,7 @@ def open_flash_version_menu(manager):
 def open_settings_menu(manager):
     tiles = [Tile(icon=BACK_icon, callback=lambda: manager.back(), name="Назад")]
 
+    # --- 🔄 Обновление программы через Git ---
     def update_program():
         def git_thread():
             try:
@@ -527,7 +528,30 @@ def open_settings_menu(manager):
 
         threading.Thread(target=git_thread, daemon=True).start()
 
-    tiles.append(make_dynamic_footer_tile(icon=DLOAD_icon, name="Обновить версию по", action_func=update_program))
+    tiles.append(make_dynamic_footer_tile(
+        icon=DLOAD_icon,
+        name="Обновить версию по",
+        action_func=update_program
+    ))
+
+    # --- ☁️ Выгрузка MAC-логов в Google Sheets ---
+    def upload_mac_logs():
+        def upload_thread():
+            try:
+                print("☁️ Синхронизация MAC-логов с Google Sheets...")
+                sync_mac_log_with_google()
+                print("✅ Синхронизация завершена.")
+            except Exception as e:
+                print(f"❌ Ошибка при синхронизации: {e}")
+
+        threading.Thread(target=upload_thread, daemon=True).start()
+
+    tiles.append(make_dynamic_footer_tile(
+        icon=READMAC_icon,  # можешь выбрать любую подходящую иконку
+        name="Выгрузить MAC-логи",
+        action_func=upload_mac_logs
+    ))
+
     manager.open(TileScreen(tiles))
 
 # ====================================================
