@@ -470,6 +470,9 @@ def make_flash_type_menu(manager, version_dir):
             relative_path = full_path.split("/firmware/")[-1]
             clean_name = relative_path.replace("_0x9000.bin", "")
 
+            firmware_version = os.path.basename(os.path.dirname(full_path))  # '2.0.47'
+            firmware_type = os.path.basename(full_path).replace("_0x9000.bin", "")
+
             prog_screen = ProgressScreen(title=f"Прошивка: {clean_name}", footer_text=os.path.basename(full_path))
             manager.open(prog_screen)
 
@@ -482,8 +485,8 @@ def make_flash_type_menu(manager, version_dir):
             # Колбэк для MAC, найденного в логах прошивки
             def on_mac(mac):
                 if mac:
-                    log_mac_locally(mac, firmware_version=relative_path, firmware_type=clean_name)
-                    print(f"✅ MAC из лога прошивки: {mac} (v:{relative_path}, type:{clean_name})")
+                    log_mac_locally(mac, firmware_version=firmware_version, firmware_type=firmware_type)
+                    print(f"✅ MAC из лога прошивки: {mac} (v:{firmware_version}, type:{firmware_type})")
                 else:
                     print("❌ Не удалось найти MAC в логе прошивки")
 
