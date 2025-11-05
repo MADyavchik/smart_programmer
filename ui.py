@@ -14,7 +14,8 @@ from esp_flasher_class import ESPFlasher
 from log_reader import LogManager
 from system_status import BatteryMonitor, WifiMonitor
 from system_updater import SystemStatusUpdater  # класс апдейтера статуса
-from utils import clean_exit
+from utils import clean_exit, log_mac_locally
+
 
 # ====================================================
 # ---------- Глобальные переменные -----------------
@@ -292,6 +293,7 @@ def read_mac_action():
         mac = flasher.get_mac_address()
         if mac:
             _last_mac_address = mac
+            log_mac_locally(mac)
             print(f"✅ MAC-адрес: {mac}")
         else:
             _last_mac_address = "Ошибка чтения MAC"
