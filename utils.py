@@ -10,6 +10,12 @@ from oauth2client.service_account import ServiceAccountCredentials
 
 MAC_LOG_FILE = "/root/mac_log.json"  # или твой путь
 
+# путь к директории, где лежит utils.py
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# путь к JSON-файлу ключа Google
+GOOGLE_KEY_PATH = os.path.join(BASE_DIR, "parsfor-efc9e0058e29.json")
+
 def clean_exit(manager=None, status_updater=None, poweroff=False, reboot=False, restart_app=False):
     """
     Корректное завершение приложения с остановкой потоков и очисткой ресурсов.
