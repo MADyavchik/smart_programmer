@@ -72,7 +72,7 @@ class ESPFlasher:
             return None
 
     # ===== Прошивка =====
-    def flash_firmware(self, variant_file_path, on_stage=None, on_progress=None):
+    def flash_firmware(self, variant_file_path, on_stage=None, on_progress=None, on_mac=None):
         """
         variant_file_path: полный путь к выбранному варианту, например:
         /root/smart_programmer/firmware/2.0.47/battery_sw_a_0x9000.bin
@@ -153,6 +153,12 @@ class ESPFlasher:
                     firmware_percent = float(m.group(1))
                     total_percent = start_percent + firmware_percent / 100 * stage_range
                     on_progress(total_percent)
+
+                 # ловим MAC
+                mac_match = re.search(r"MAC: ([0-9A-Fa-f:]{17})", line)
+                if mac_match and on_mac:
+                    mac_address = mac_match.group(1).lower()
+                    on_mac(mac_address)
 
             proc.wait()
 

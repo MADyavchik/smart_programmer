@@ -479,8 +479,16 @@ def make_flash_type_menu(manager, version_dir):
             def on_progress(percent):
                 prog_screen.progress = percent
 
+            # Колбэк для MAC, найденного в логах прошивки
+            def on_mac(mac):
+                if mac:
+                    log_mac_locally(mac, firmware_version=firmware_version, firmware_type=firmware_type)
+                    print(f"✅ MAC из лога прошивки: {mac} (v:{firmware_version}, type:{firmware_type})")
+                else:
+                    print("❌ Не удалось найти MAC в логе прошивки")
+
             def flash_thread():
-                success = flasher.flash_firmware(full_path, on_stage=on_stage, on_progress=on_progress)
+                success = flasher.flash_firmware(full_path, on_stage=on_stage, on_progress=on_progress, on_mac=on_mac)
                 prog_screen.finished = True
                 prog_screen.success = success
                 prog_screen.stage = "Готово" if success else "Ошибка"
