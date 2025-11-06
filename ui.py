@@ -112,7 +112,10 @@ WIFI1_icon = load_icon("wifi1_ico.png")
 WIFI2_icon = load_icon("wifi2_ico.png")
 WIFI3_icon = load_icon("wifi3_ico.png")
 DLOAD_icon = load_icon("download_ico.png")
-BACK_icon = load_icon("back_ico.png")
+BACK_icon = load_icon("back_ico2.png")
+PUSH_Table_icon = load_icon("push_table_ico.png")
+CHARGE_icon = load_icon("charge_ico.png")
+
 
 # ====================================================
 # ---------- Классы плиток и экранов ----------------
@@ -341,6 +344,14 @@ def battery_color(selected=False):
             color, highlight = (0, 200, 0), (0, 255, 0)
     return highlight if selected else color
 
+def battery_icon_func():
+    charging = status_updater.battery_charging
+    if charging:
+        return CHARGE_icon
+    else:
+        return BATT_icon
+
+
 def wifi_icon_func():
     quality = status_updater.wifi_quality
     if quality == 0: return WIFI0_icon
@@ -395,7 +406,7 @@ main_tiles = [
     Tile(icon=REB_icon, callback=reboot_action, dynamic_color_func=reboot_color, name="Перезагрузка"),
     make_mac_tile(),
     Tile(icon=SET_icon, callback=lambda: open_settings_menu(manager), name="Настройки"),
-    Tile(icon=BATT_icon, dynamic_color_func=battery_color, callback=stub_action("BATT"), dynamic_label_func=battery_text)
+    Tile(dynamic_icon_func=battery_icon_func, dynamic_color_func=battery_color, callback=stub_action("BATT"), dynamic_label_func=battery_text)
 ]
 main_menu = TileScreen(main_tiles)
 manager = ScreenManager(main_menu)
@@ -558,7 +569,7 @@ def open_settings_menu(manager):
         threading.Thread(target=upload_thread, daemon=True).start()
 
     tiles.append(make_dynamic_footer_tile(
-        icon=READMAC_icon,  # можешь выбрать любую подходящую иконку
+        icon=PUSH_Table_icon,  # можешь выбрать любую подходящую иконку
         name="Выгрузить MAC-логи",
         action_func=upload_mac_logs
     ))
