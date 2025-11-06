@@ -266,7 +266,7 @@ def make_dynamic_footer_tile(icon, name, action_func):
 
         def thread_func():
             try:
-                footer_text["current"] = "Обновление запущено..."
+                footer_text["current"] = "В процессе..."
                 action_func()
                 time.sleep(2)
                 footer_text["current"] = "Готово"
@@ -372,11 +372,9 @@ def battery_text():
     return f"{percent}%"
 
 def battery_color(selected=False):
-    #charging = status_updater.battery_charging
+
     percent = status_updater.battery_percent
-    #if charging:
-    #    color, highlight = (0, 130, 200), (0, 220, 255)
-    #else:
+
     if percent <= 20:
         color, highlight = (180, 50, 50), (255, 80, 80)
     else:
