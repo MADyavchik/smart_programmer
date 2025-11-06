@@ -46,6 +46,11 @@ def download_latest_firmware(on_msg=None):
                 msg = f"Папка {extract_dir}-Ок"
                 if on_msg: on_msg(msg)
                 print(msg)
+
+                msg = "Готово!"
+                if on_msg: on_msg(msg)
+                print(msg)
+
                 saved_paths.append(extract_dir)
                 continue
 
