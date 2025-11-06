@@ -324,6 +324,36 @@ def make_mac_tile():
         dynamic_label_func=footer_func,
         name="Считать MAC"
     )
+# ===================================================
+#---------- Плитка загрузки новых прошивок ----------
+# ===================================================
+
+def make_firmware_download_tile(manager):
+    """Создаёт плитку обновления прошивок с динамическим футером."""
+    footer_text = "Обновить вер. прошивки"
+
+    def footer_func():
+        return footer_text  # динамически возвращаем текущий текст для футера
+
+    def on_msg(msg):
+        nonlocal footer_text
+        footer_text = msg  # обновляем текст
+        #manager.refresh()  # чтобы UI обновился
+
+    def start_download():
+        threading.Thread(
+            target=lambda: download_latest_firmware(on_msg=on_msg),
+            daemon=True
+        ).start()
+
+    return Tile(
+        icon=DLOAD_icon,
+        callback=start_download,
+        dynamic_label_func=footer_func,
+        name="Обновить вер. прошивки"
+    )
+
+
 
 # ====================================================
 # ---------- Функции для батареи и WiFi ------------
@@ -527,7 +557,9 @@ def open_flash_version_menu(manager):
     for ver in versions:
         tiles.append(Tile(label=ver, callback=lambda v=ver: manager.open(make_flash_type_menu(manager, v))))
 
-    tiles.append(Tile(icon=DLOAD_icon, callback=lambda: download_latest_firmware(), name="Обновить вер.прошивки"))
+    #tiles.append(Tile(icon=DLOAD_icon, callback=lambda: download_latest_firmware(), name="Обновить вер.прошивки"))
+    # ✅ Добавляем динамическую плитку обновления
+    tiles.append(make_firmware_download_tile(manager))
 
     manager.open(TileScreen(tiles))
 

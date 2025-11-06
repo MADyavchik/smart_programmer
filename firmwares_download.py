@@ -8,7 +8,7 @@ SERVER_URL = "https://tn.zitsky.com/flasher/eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9
 DOWNLOAD_DIR = "firmware"
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
-def download_latest_firmware():
+def download_latest_firmware(on_msg=None):
     try:
 
         response = requests.get(SERVER_URL)
@@ -17,10 +17,13 @@ def download_latest_firmware():
 
         firmwares = data.get("firmwares", [])
         if not firmwares:
-            print("❌ Нет доступных прошивок")
+            msg = "Нет доступных прошивок"
+            if on_msg: on_msg(msg)
+            print(msg)
             return []
-
-        print("\n📦 Доступные прошивки:")
+        msg = "поиск новых прошивок"
+        if on_msg: on_msg(msg)
+        print("\nДоступные прошивки:")
         for fw in firmwares:
             print(f"  • Версия: {fw['version']}, Группа: {fw['group']}, Дата: {fw['created_at']}")
 
@@ -40,7 +43,9 @@ def download_latest_firmware():
 
             # если распакованная версия уже есть — пропускаем
             if os.path.exists(extract_dir):
-                print(f"⚠ Папка {extract_dir} уже существует — пропускаем загрузку")
+                msg = f"Папка {extract_dir}-Ок"
+                if on_msg: on_msg(msg)
+                print(msg)
                 saved_paths.append(extract_dir)
                 continue
 
@@ -51,18 +56,24 @@ def download_latest_firmware():
                     for chunk in r.iter_content(chunk_size=8192):
                         f.write(chunk)
 
-            print(f"✅ Скачано: {local_path}")
+            msg = f"Скачано: {local_path}"
+            if on_msg: on_msg(msg)
+            print(msg)
 
             # распаковываем
             os.makedirs(extract_dir, exist_ok=True)
             with zipfile.ZipFile(local_path, 'r') as zip_ref:
                 zip_ref.extractall(extract_dir)
 
-            print(f"📂 Распаковано в: {extract_dir}")
+            msg = f"Распаковано в: {extract_dir}"
+            if on_msg: on_msg(msg)
+            print(msg)
 
             # удаляем архив
             os.remove(local_path)
-            print(f"🗑 Удалено: {local_path}")
+            msg = f"Удалено: {local_path}"
+            if on_msg: on_msg(msg)
+            print(msg)
 
             saved_paths.append(extract_dir)
 
@@ -71,7 +82,9 @@ def download_latest_firmware():
         return saved_paths
 
     except Exception as e:
-        print(f"❌ Ошибка: {e}")
+        msg = f"Ошибка: {e}"
+        if on_msg: on_msg(msg)
+        print(msg)
         return []
 
 def cleanup_old_firmwares(base_dir, keep):
@@ -86,5 +99,5 @@ def cleanup_old_firmwares(base_dir, keep):
     # старые — всё, кроме первых 'keep'
     for old in folders[keep:]:
         path = os.path.join(base_dir, old)
-        print(f"🗑 Удаляем старую прошивку: {old}")
+        print(f"Удаляем старую прошивку: {old}")
         os.system(f"rm -rf '{path}'")
