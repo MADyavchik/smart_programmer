@@ -328,7 +328,7 @@ def make_mac_tile():
 #---------- Плитка загрузки новых прошивок ----------
 # ===================================================
 
-def make_firmware_download_tile(manager):
+def make_firmware_download_tile():
     """Создаёт плитку обновления прошивок с динамическим футером."""
     footer_text = "Обновить вер. прошивки"
 
@@ -338,7 +338,16 @@ def make_firmware_download_tile(manager):
     def on_msg(msg):
         nonlocal footer_text
         footer_text = msg  # обновляем текст
-        #manager.refresh()  # чтобы UI обновился
+        # manager.refresh()  # можно вернуть если нужно принудительно обновить UI
+
+        # если сообщение — "Готово!" или ошибка, вернуть исходный текст через секунду
+        if msg.lower().startswith("готово") or "ошибка" in msg.lower():
+            def reset_footer():
+                time.sleep(1)
+                nonlocal footer_text
+                footer_text = "Обновить вер. прошивки"
+                # manager.refresh()  # при необходимости
+            threading.Thread(target=reset_footer, daemon=True).start()
 
     def start_download():
         threading.Thread(

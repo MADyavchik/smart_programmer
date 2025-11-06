@@ -79,6 +79,10 @@ def download_latest_firmware(on_msg=None):
 
             cleanup_old_firmwares(DOWNLOAD_DIR, keep=6)
 
+            msg = "Готово!"
+            if on_msg: on_msg(msg)
+            print(msg)
+
         return saved_paths
 
     except Exception as e:
