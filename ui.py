@@ -568,7 +568,7 @@ def open_flash_version_menu(manager):
 
     #tiles.append(Tile(icon=DLOAD_icon, callback=lambda: download_latest_firmware(), name="Обновить вер.прошивки"))
     # ✅ Добавляем динамическую плитку обновления
-    tiles.append(make_firmware_download_tile(manager))
+    tiles.append(make_firmware_download_tile())
 
     manager.open(TileScreen(tiles))
 
