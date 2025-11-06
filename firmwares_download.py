@@ -28,7 +28,7 @@ def download_latest_firmware():
         firmwares.sort(key=lambda x: version.parse(x["version"]))
 
         # берём последние три
-        last_three = firmwares[-1:]
+        last_three = firmwares[-6:]
         saved_paths = []
 
         for fw in last_three:
@@ -66,7 +66,7 @@ def download_latest_firmware():
 
             saved_paths.append(extract_dir)
 
-            cleanup_old_firmwares(DOWNLOAD_DIR, keep=3)
+            cleanup_old_firmwares(DOWNLOAD_DIR, keep=6)
 
         return saved_paths
 
