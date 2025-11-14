@@ -616,8 +616,10 @@ def open_settings_menu(manager):
 
     def printer_connect():
         print("Подключение к принтеру...")
-        # путь к python в виртуальном окружении
-        venv_python = "/usr/src/Python-3.12.0/NiimPrintX/venv/bin/python3"
+        import subprocess
+
+        # правильный путь к Python виртуального окружения
+        venv_python = "/root/niimprintx-venv/bin/python3"
         # путь к скрипту печати
         script = "/usr/src/Python-3.12.0/NiimPrintX/test_print_text.py"
 
