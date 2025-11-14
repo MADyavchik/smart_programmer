@@ -616,7 +616,7 @@ def open_settings_menu(manager):
     def printer_connect():
         print("подключение принтера")
 
-    tiles.append(icon=LOG_icon, action_func=printer_connect, name="Чтение лога")
+    tiles.append(Tile(icon=LOG_icon, callback=printer_connect, name="Чтение лога"))
 
     manager.open(TileScreen(tiles))
 
