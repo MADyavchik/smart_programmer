@@ -5,6 +5,7 @@ import pygame
 import RPi.GPIO as GPIO
 import threading
 import sys
+import subprocess
 
 from luma.core.interface.serial import spi
 from luma.lcd.device import st7789
@@ -614,9 +615,19 @@ def open_settings_menu(manager):
     ))
 
     def printer_connect():
-        print("подключение принтера")
+        print("Подключение к принтеру...")
+        # путь к python в виртуальном окружении
+        venv_python = "/usr/src/Python-3.12.0/NiimPrintX/venv/bin/python3"
+        # путь к скрипту печати
+        script = "/usr/src/Python-3.12.0/NiimPrintX/test_print_text.py"
 
-    tiles.append(Tile(icon=LOG_icon, callback=printer_connect, name="Чтение лога"))
+        try:
+            subprocess.run([venv_python, script], check=True)
+            print("✅ Команда печати выполнена")
+        except subprocess.CalledProcessError as e:
+            print(f"❌ Ошибка при запуске скрипта: {e}")
+
+    tiles.append(Tile(icon=LOG_icon, callback=printer_connect, name="Принтер"))
 
     manager.open(TileScreen(tiles))
 
