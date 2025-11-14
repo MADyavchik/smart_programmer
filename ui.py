@@ -613,6 +613,11 @@ def open_settings_menu(manager):
         action_func=upload_mac_logs
     ))
 
+    def printer_connect():
+        print("подключение принтера")
+
+    tiles.append(icon=LOG_icon, action_func=printer_connect, name="Чтение лога")
+
     manager.open(TileScreen(tiles))
 
 # ====================================================
